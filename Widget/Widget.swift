@@ -210,7 +210,20 @@ struct MediumView: View {
             HStack(alignment: .center, spacing: 12) {
                 BigTime(day: day, size: 34)
                 Spacer(minLength: 0)
-                Arrival(day: day)
+                VStack(alignment: .trailing, spacing: 8) {
+                    Arrival(day: day)
+                    if let top = day.apps(.productive).first {
+                        VStack(alignment: .trailing, spacing: 1) {
+                            Text("App más productiva").font(.system(size: 9)).foregroundStyle(.secondary)
+                            HStack(spacing: 4) {
+                                Image(systemName: "star.fill").font(.system(size: 9)).foregroundStyle(.secondary)
+                                Text(top.name).fontWeight(.semibold).lineLimit(1)
+                                Text(Fmt.duration(top.seconds)).foregroundStyle(.secondary)
+                            }
+                            .font(.system(size: 11, design: .rounded))
+                        }
+                    }
+                }
             }
             Spacer(minLength: 8)
             WorkBreakdown(day: day)
