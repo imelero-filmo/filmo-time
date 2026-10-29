@@ -93,7 +93,7 @@ Clic derecho en el icono **F** de la barra de menús → activa **Abrir al inici
 | Pestaña **Semana** | Pasa el ratón por una barra para ver el día; haz clic para abrirlo |
 | Widget | Haz clic para abrir tu DeskTime en el navegador |
 
-**Actualización de datos:** cada 5 minutos en la app y cada 15 minutos en el widget mientras estás en línea.
+**Actualización de datos:** cada 5 minutos. La barra de menús, el desplegable y el widget usan la misma consulta, así que siempre muestran lo mismo.
 
 ## Qué significa cada dato
 

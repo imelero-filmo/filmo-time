@@ -25,7 +25,7 @@ PONER EL WIDGET EN EL ESCRITORIO
 Clic derecho en el escritorio → «Editar widgets…» → busca el nombre de la app
 → elige el tamaño (pequeño, mediano, grande o extragrande) → «Hecho».
 
-Se actualiza solo cada 15 minutos (y más a menudo si la app está abierta).
+Se actualiza solo cada 5 minutos, con los mismos datos que la barra de menús.
 
 
 QUÉ SIGNIFICA CADA DATO

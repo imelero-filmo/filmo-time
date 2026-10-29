@@ -144,7 +144,7 @@ struct DayData {
     }
 }
 
-struct WeekDay: Identifiable {
+struct WeekDay: Identifiable, Codable {
     var id: Date { date }
     let date: Date
     var productive: Double = 0
@@ -285,8 +285,9 @@ struct DeskTimeAPI {
 }
 
 extension DeskTimeAPI {
-    /// Monday-to-Sunday summary of the week containing `around`.
-    func week(around: Date) async throws -> [WeekDay] {
+    /// Monday-to-Sunday summary of the week containing `around`. Days already in
+    /// `known` (past days do not change) and today, when given, cost no request.
+    func week(around: Date, today: DayData? = nil, known: [String: WeekDay] = [:]) async throws -> [WeekDay] {
         var cal = Calendar(identifier: .gregorian)
         cal.firstWeekday = 2
         let start = cal.dateInterval(of: .weekOfYear, for: around)!.start
@@ -296,6 +297,11 @@ extension DeskTimeAPI {
             for d in days {
                 group.addTask {
                     if d > now { return WeekDay(date: d, isFuture: true) }
+                    if let t = today, Calendar.current.isDateInToday(d) {
+                        return WeekDay(date: d, productive: t.productive, desktime: t.desktime,
+                                       productivity: t.productivity, efficiency: t.efficiency)
+                    }
+                    if let k = known[Fmt.ymd(d)] { return k }
                     let j = try await get("employee/basic", date: d)
                     return WeekDay(date: d,
                                    productive: num(j["productiveTime"]),
@@ -308,6 +314,33 @@ extension DeskTimeAPI {
             for try await w in group { out.append(w) }
             return out.sorted { $0.date < $1.date }
         }
+    }
+}
+
+// MARK: - Snapshot
+
+/// Today's data as last fetched by the app. The widget reads it, so the menu bar,
+/// the popover and the widget all show the same numbers from the same request.
+enum Snapshot {
+    static let url = KeyStore.fileURL.deletingLastPathComponent().appendingPathComponent("snapshot.json")
+
+    static func save(day: [String: Any], week: [WeekDay]) {
+        guard let weekData = try? JSONEncoder().encode(week),
+              let weekJSON = try? JSONSerialization.jsonObject(with: weekData) else { return }
+        let obj: [String: Any] = ["fetchedAt": Date().timeIntervalSince1970, "day": day, "week": weekJSON]
+        guard let data = try? JSONSerialization.data(withJSONObject: obj) else { return }
+        try? data.write(to: url, options: .atomic)
+        try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
+    }
+
+    static func load() -> (fetchedAt: Date, day: DayData, week: [WeekDay])? {
+        guard let data = try? Data(contentsOf: url),
+              let obj = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+              let day = obj["day"] as? [String: Any],
+              let weekJSON = obj["week"],
+              let weekData = try? JSONSerialization.data(withJSONObject: weekJSON),
+              let week = try? JSONDecoder().decode([WeekDay].self, from: weekData) else { return nil }
+        return (Date(timeIntervalSince1970: num(obj["fetchedAt"])), DayData.parse(day), week)
     }
 }
 

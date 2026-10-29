@@ -27,13 +27,19 @@ struct Provider: TimelineProvider {
     func getTimeline(in context: Context, completion: @escaping (Timeline<Entry>) -> Void) {
         Task {
             let entry = await load()
-            // Refresh often while working; WidgetKit may stretch this anyway.
-            let minutes = entry.day?.isOnline == true ? 15 : 60
+            // Same 5-minute rhythm as the app; WidgetKit may stretch it to save battery.
+            let minutes = entry.day?.isOnline == true ? 5 : 30
             completion(Timeline(entries: [entry], policy: .after(Date().addingTimeInterval(Double(minutes) * 60))))
         }
     }
 
     private func load() async -> Entry {
+        // Prefer the app's latest fetch so every surface shows the same numbers.
+        if let s = Snapshot.load(), Calendar.current.isDateInToday(s.fetchedAt),
+           Date().timeIntervalSince(s.fetchedAt) < 15 * 60 {
+            return Entry(date: s.fetchedAt, day: s.day, week: s.week)
+        }
+        // The app is not running: fetch directly.
         guard let key = KeyStore.read() else {
             return Entry(date: Date(), error: "Abre \(AppInfo.name) y pega tu API key.")
         }
@@ -66,8 +72,8 @@ struct DeskTimeContent: View {
                 switch family {
                 case .systemSmall: SmallView(day: d)
                 case .systemMedium: MediumView(day: d)
-                case .systemExtraLarge: ExtraLargeView(day: d, week: entry.week)
-                default: LargeView(day: d, week: entry.week)
+                case .systemExtraLarge: ExtraLargeView(day: d, week: entry.week, updated: entry.date)
+                default: LargeView(day: d, week: entry.week, updated: entry.date)
                 }
             } else {
                 VStack(alignment: .leading, spacing: 6) {
@@ -254,11 +260,12 @@ struct TopApps: View {
 struct LargeView: View {
     let day: DayData
     let week: [WeekDay]
+    var updated = Date()
     var appCount = 3
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Brand(online: day.isOnline, updated: Date())
+            Brand(online: day.isOnline, updated: updated)
             HStack(alignment: .center) {
                 BigTime(day: day, size: 36)
                 Spacer()
@@ -331,10 +338,11 @@ struct WeekChart: View {
 struct ExtraLargeView: View {
     let day: DayData
     let week: [WeekDay]
+    var updated = Date()
 
     var body: some View {
         HStack(alignment: .top, spacing: 18) {
-            LargeView(day: day, week: [], appCount: 6)
+            LargeView(day: day, week: [], updated: updated, appCount: 6)
                 .frame(maxWidth: .infinity)
             VStack(alignment: .leading, spacing: 10) {
                 section("ESTA SEMANA", trailing: weekTotal)

@@ -25,9 +25,10 @@ final class Store: ObservableObject {
     let demo: Bool
     var onChange: (() -> Void)?
     private var timer: Timer?
-    private var fastTimer: Timer?
-    /// Keeps App Nap from stretching the timers of this window-less app.
+    /// Keeps App Nap from stretching the timer of this window-less app.
     private var activity: NSObjectProtocol?
+    /// Past days of the week never change, so each is fetched only once.
+    private var knownDays: [String: WeekDay] = [:]
 
     init(demo: Bool) {
         self.demo = demo
@@ -40,13 +41,9 @@ final class Store: ObservableObject {
         activity = ProcessInfo.processInfo.beginActivity(
             options: .userInitiatedAllowingIdleSystemSleep, reason: "Keep menu bar time current")
         Task { await refresh() }
-        // Full refresh (day, week and widget) every 10 minutes...
-        timer = Timer.scheduledTimer(withTimeInterval: 600, repeats: true) { [weak self] _ in
+        // One rhythm for everything: menu bar, popover and widget.
+        timer = Timer.scheduledTimer(withTimeInterval: 300, repeats: true) { [weak self] _ in
             Task { @MainActor in await self?.refresh() }
-        }
-        // ...and today's numbers every 2 minutes, one request, for the menu bar.
-        fastTimer = Timer.scheduledTimer(withTimeInterval: 120, repeats: true) { [weak self] _ in
-            Task { @MainActor in await self?.refreshToday() }
         }
         NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didWakeNotification, object: nil, queue: .main
@@ -100,37 +97,39 @@ final class Store: ObservableObject {
         defer { loading = false; onChange?() }
         let api = DeskTimeAPI(key: key)
         let requested = date
-        let requestedIsToday = Calendar.current.isDateInToday(requested)
         do {
-            async let dayJSON = api.get("employee", date: requested)
-            async let weekData = api.week(around: requested)
-            // Browsing another day still keeps today's numbers fresh for the menu bar.
-            async let todayJSON: [String: Any]? = requestedIsToday ? nil : api.get("employee/basic", date: Date())
-            let (j, w, t) = try await (dayJSON, weekData, todayJSON)
-            let parsed = DayData.parse(j)
-            today = requestedIsToday ? parsed : t.map(DayData.parse) ?? today
-            guard requested == date else { return }
-            day = parsed
-            week = w
+            // Today is the single source for the menu bar, the popover and the widget.
+            let todayJSON = try await api.get("employee", date: Date())
+            let t = DayData.parse(todayJSON)
+            let todayWeek = try await api.week(around: Date(), today: t, known: knownDays)
+            remember(todayWeek)
+            today = t
+            Snapshot.save(day: todayJSON, week: todayWeek)
+            WidgetCenter.shared.reloadAllTimelines()
+
+            if Calendar.current.isDateInToday(requested) {
+                day = t
+                week = todayWeek
+            } else {
+                async let dayJSON = api.get("employee", date: requested)
+                async let otherWeek = api.week(around: requested, today: t, known: knownDays)
+                let (j, w) = try await (dayJSON, otherWeek)
+                remember(w)
+                guard requested == date else { return }
+                day = DayData.parse(j)
+                week = w
+            }
             error = nil
             lastUpdate = Date()
-            WidgetCenter.shared.reloadAllTimelines()
         } catch {
             self.error = error.localizedDescription
         }
     }
 
-    /// Lightweight update of today's data; leaves the week and the widget alone.
-    func refreshToday() async {
-        guard !demo, !loading, let key = KeyStore.read() else { return }
-        guard let j = try? await DeskTimeAPI(key: key).get("employee", date: Date()) else { return }
-        let parsed = DayData.parse(j)
-        today = parsed
-        if isToday {
-            day = parsed
-            lastUpdate = Date()
+    private func remember(_ days: [WeekDay]) {
+        for d in days where !d.isFuture && !Calendar.current.isDateInToday(d.date) {
+            knownDays[Fmt.ymd(d.date)] = d
         }
-        onChange?()
     }
 
     /// Productive-time average of the other worked days this week.
