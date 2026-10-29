@@ -63,6 +63,8 @@ enum AppKeys {
     static let music = ["spotify", "music"]
     static let amazon = ["amazon.es", "amazon.com", "amazon.co.uk"]
     static let deskTime = ["desktime.com"]
+    /// DeskTime reports Google Slides as docs.google.com, the same as Docs, so it cannot be told apart.
+    static let presentations = ["powerpoint", "keynote", "slides.google.com", "pitch.com", "canva.com", "prezi.com"]
     /// From filmo.io/resources/competitors (Business Central left out: it is all of microsoft.com).
     static let competitors = ["rentman.io", "rentmanapp.com", "current-rms.com", "hirehop.com", "myhirehop.com",
                               "flexrentalsolutions.com", "booqable.com", "goodshuffle.com", "rentaltracker.com",
@@ -203,6 +205,11 @@ let allAchievements: [Achievement] = [
         $0.worked >= fullDay && !$0.today.apps.isEmpty && $0.today.apps.count <= 4
     },
 
+    Achievement(id: "weekly", emoji: "📽️", title: "Weekly time",
+                detail: "Abriste una presentación un lunes entre las 9 y las 11. Que empiece el show.") { c in
+        guard c.weekday == 2, (9 * 60..<11 * 60).contains(c.minuteOfDay), let prev = c.previous else { return false }
+        return c.today.seconds(matching: AppKeys.presentations) > prev.seconds(matching: AppKeys.presentations)
+    },
     Achievement(id: "plagiador", emoji: "🕵️", title: "Plagiador",
                 detail: "Más de 10 minutos en webs de la competencia en un día. Lo llamaremos benchmarking.") {
         $0.today.seconds(matching: AppKeys.competitors) > 10 * 60
