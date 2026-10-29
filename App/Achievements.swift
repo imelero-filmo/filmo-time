@@ -63,6 +63,10 @@ enum AppKeys {
     static let music = ["spotify", "music"]
     static let amazon = ["amazon.es", "amazon.com", "amazon.co.uk"]
     static let deskTime = ["desktime.com"]
+    /// From filmo.io/resources/competitors (Business Central left out: it is all of microsoft.com).
+    static let competitors = ["rentman.io", "rentmanapp.com", "current-rms.com", "hirehop.com", "myhirehop.com",
+                              "flexrentalsolutions.com", "booqable.com", "goodshuffle.com", "rentaltracker.com",
+                              "lasso.io", "farmerswife.com", "odoo.com"]
 }
 
 let allAchievements: [Achievement] = [
@@ -197,6 +201,11 @@ let allAchievements: [Achievement] = [
     Achievement(id: "zen", emoji: "🧘", title: "Modo zen",
                 detail: "Una jornada completa usando 4 apps como mucho. Paz interior.") {
         $0.worked >= fullDay && !$0.today.apps.isEmpty && $0.today.apps.count <= 4
+    },
+
+    Achievement(id: "plagiador", emoji: "🕵️", title: "Plagiador",
+                detail: "Más de 10 minutos en webs de la competencia en un día. Lo llamaremos benchmarking.") {
+        $0.today.seconds(matching: AppKeys.competitors) > 10 * 60
     },
 
     // Meta
