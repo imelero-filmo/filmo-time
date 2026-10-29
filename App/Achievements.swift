@@ -57,7 +57,8 @@ enum AppKeys {
     static let chat = ["chat.google.com", "whatsapp", "telegram", "discord", "signal"]
     static let code = ["terminal", "iterm", "xcode", "code", "cursor", "warp", "ghostty", "intellij",
                        "pycharm", "webstorm", "zed", "nova", "sublime"]
-    static let figma = ["figma"]
+    static let office = ["docs.google.com", "sheets.google.com", "slides.google.com", "excel", "powerpoint",
+                         "microsoft word", "numbers", "keynote"]
     static let video = ["youtube", "netflix", "twitch", "primevideo", "disneyplus", "hbomax", "max.com"]
     static let music = ["spotify", "music"]
     static let amazon = ["amazon.es", "amazon.com", "amazon.co.uk"]
@@ -173,9 +174,9 @@ let allAchievements: [Achievement] = [
                 detail: "Más de 5 horas en el terminal o el editor. Estoy dentro.") {
         $0.today.seconds(matching: AppKeys.code) > 5 * hour
     },
-    Achievement(id: "pixel", emoji: "🎨", title: "Pixel perfect",
-                detail: "Más de 6 horas en Figma. Ese botón ya estaba centrado.") {
-        $0.today.seconds(matching: AppKeys.figma) > 6 * hour
+    Achievement(id: "ofimatico", emoji: "📊", title: "Ofimático legendario",
+                detail: "Más de 4 horas en documentos, hojas de cálculo o presentaciones. Esa fórmula no se arregla sola.") {
+        $0.today.seconds(matching: AppKeys.office) > 4 * hour
     },
     Achievement(id: "capitulo", emoji: "📺", title: "Solo un capítulo más",
                 detail: "Más de 2 horas en YouTube, Netflix o Twitch. Era un tutorial, seguro.") {
