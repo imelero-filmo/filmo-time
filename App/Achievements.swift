@@ -228,6 +228,33 @@ let allAchievements: [Achievement] = [
     },
 ]
 
+// MARK: - Live triggers
+
+/// The Mac telling us you switched to an app, the moment it happens.
+struct LiveEvent {
+    let appName: String
+    let now: Date
+
+    var calendar: Calendar { Calendar(identifier: .gregorian) }
+    var weekday: Int { calendar.component(.weekday, from: now) }
+    var minuteOfDay: Int { calendar.component(.hour, from: now) * 60 + calendar.component(.minute, from: now) }
+    var isFirstFridayOfMonth: Bool { weekday == 6 && calendar.component(.day, from: now) <= 7 }
+
+    func appMatches(_ keys: [String]) -> Bool {
+        let n = appName.lowercased()
+        return keys.contains { !$0.contains(".") && n.contains($0) }
+    }
+}
+
+/// Achievements about a moment rather than a daily total unlock as soon as macOS
+/// reports the app switch, instead of waiting for DeskTime's next numbers.
+let liveTriggers: [String: (LiveEvent) -> Bool] = [
+    "weekly": { $0.weekday == 2 && (9 * 60..<11 * 60).contains($0.minuteOfDay) && $0.appMatches(AppKeys.presentations) },
+    "aguafiestas": { $0.isFirstFridayOfMonth && $0.minuteOfDay >= 19 * 60 && $0.appMatches(AppKeys.claude) },
+    "buho": { $0.minuteOfDay >= 23 * 60 },
+    "madrugador": { (5 * 60..<7 * 60).contains($0.minuteOfDay) },
+]
+
 extension DayData {
     /// Seconds in apps whose name matches any key. Keys with a dot are domains
     /// (exact or subdomain match); other keys match anywhere in the name.
@@ -294,12 +321,32 @@ final class Achievements: ObservableObject {
             today: today, previous: previousToday, now: Date(), week: week, history: state.history,
             popoverOpensToday: state.opensDay == Fmt.ymd(Date()) ? state.opens : 0,
             isFirstDay: state.firstDay == Fmt.ymd(Date()))
-        var fresh: [Achievement] = []
-        for a in allAchievements where state.unlocked[a.id] == nil && a.check(ctx) {
-            state.unlocked[a.id] = Date()
-            fresh.append(a)
-        }
         previousToday = today
+        unlock(allAchievements.filter { state.unlocked[$0.id] == nil && $0.check(ctx) })
+    }
+
+    private var observer: NSObjectProtocol?
+
+    /// Listens for app switches to unlock moment-based achievements right away.
+    func startLive() {
+        guard persist, observer == nil else { return }
+        observer = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main
+        ) { [weak self] note in
+            let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
+            let event = LiveEvent(appName: app?.localizedName ?? "", now: Date())
+            MainActor.assumeIsolated { self?.handle(event) }
+        }
+    }
+
+    func handle(_ event: LiveEvent) {
+        unlock(allAchievements.filter { a in
+            state.unlocked[a.id] == nil && (liveTriggers[a.id]?(event) ?? false)
+        })
+    }
+
+    private func unlock(_ fresh: [Achievement]) {
+        for a in fresh { state.unlocked[a.id] = Date() }
         save()
         for a in fresh { notify(a) }
     }

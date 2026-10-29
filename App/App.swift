@@ -40,6 +40,7 @@ final class Store: ObservableObject {
     var isToday: Bool { Calendar.current.isDateInToday(date) }
 
     func start() {
+        achievements.startLive()
         activity = ProcessInfo.processInfo.beginActivity(
             options: .userInitiatedAllowingIdleSystemSleep, reason: "Keep menu bar time current")
         Task { await refresh() }

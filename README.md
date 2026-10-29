@@ -164,11 +164,11 @@ Compilar requiere Xcode (o sus herramientas de línea de comandos) y un certific
 ### Publicar una versión
 
 ```bash
-VERSION=1.1.3 ./build.sh --dmg
-gh release create v1.1.3 dist/Filmo-Time.dmg --title "Filmo Time 1.1.3" --notes "Qué cambia"
+VERSION=1.1.4 ./build.sh --dmg
+gh release create v1.1.4 dist/Filmo-Time.dmg --title "Filmo Time 1.1.4" --notes "Qué cambia"
 ```
 
-- La etiqueta tiene que ser `v` + la misma versión (`v1.1.3`) y el archivo adjunto llamarse `Filmo-Time.dmg`.
+- La etiqueta tiene que ser `v` + la misma versión (`v1.1.4`) y el archivo adjunto llamarse `Filmo-Time.dmg`.
 - Las apps instaladas lo detectan solas (una vez al día) y ofrecen actualizar. Solo instalan versiones firmadas por el mismo certificado.
 - El enlace de descarga del README apunta siempre a la última release.
 
