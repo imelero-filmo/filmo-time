@@ -148,14 +148,14 @@ struct BigTime: View {
     var size: CGFloat = 30
     var body: some View {
         VStack(alignment: .leading, spacing: 1) {
-            Text("Tiempo productivo").font(.system(size: 10, weight: .medium)).foregroundStyle(.secondary)
-            Text(Fmt.duration(day.productive))
+            Text("Tiempo trabajado").font(.system(size: 10, weight: .medium)).foregroundStyle(.secondary)
+            Text(Fmt.duration(day.worked))
                 .font(.system(size: size, weight: .bold, design: .rounded))
                 .minimumScaleFactor(0.6)
                 .lineLimit(1)
                 .contentTransition(.numericText())
-            Text("de \(Fmt.duration(day.desktime)) en DeskTime")
-                .font(.system(size: 10))
+            Text("\(Fmt.duration(day.productive)) productivo")
+                .font(.system(size: 10, weight: .medium))
                 .foregroundStyle(.secondary)
         }
     }
@@ -183,13 +183,9 @@ struct SmallView: View {
             Spacer(minLength: 4)
             BigTime(day: day, size: 32)
             Spacer(minLength: 6)
-            HStack(spacing: 8) {
-                WRing(value: day.productivity, size: 34, line: 4)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Productividad").font(.system(size: 9)).foregroundStyle(.secondary)
-                    Arrival(day: day)
-                }
-            }
+            WorkBreakdown(day: day, legend: false, height: 5)
+            Spacer(minLength: 6)
+            Arrival(day: day)
         }
     }
 }
@@ -198,27 +194,17 @@ struct MediumView: View {
     let day: DayData
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Brand(online: day.isOnline)
+            HStack {
+                Brand(online: day.isOnline)
+            }
             Spacer(minLength: 4)
             HStack(alignment: .center, spacing: 12) {
                 BigTime(day: day, size: 34)
                 Spacer(minLength: 0)
-                LabeledRing(value: day.productivity, title: "Productividad", size: 46)
-                LabeledRing(value: day.efficiency, title: "Eficacia", size: 46)
-            }
-            Spacer(minLength: 6)
-            HStack(spacing: 10) {
                 Arrival(day: day)
-                Spacer(minLength: 4)
-                if let top = day.apps(.productive).first {
-                    HStack(spacing: 4) {
-                        Image(systemName: "star.fill").foregroundStyle(.secondary)
-                        Text(top.name).lineLimit(1)
-                        Text(Fmt.duration(top.seconds)).foregroundStyle(.secondary)
-                    }
-                    .font(.system(size: 11, design: .rounded))
-                }
             }
+            Spacer(minLength: 8)
+            WorkBreakdown(day: day)
         }
     }
 }
@@ -272,6 +258,7 @@ struct LargeView: View {
                 LabeledRing(value: day.productivity, title: "Productividad", size: 50)
                 LabeledRing(value: day.efficiency, title: "Eficacia", size: 50)
             }
+            WorkBreakdown(day: day)
             HStack(spacing: 6) {
                 stat("Llegada", day.arrived ?? "—", day.late ? Theme.red : .primary)
                 stat("Salida", day.isOnline ? "En línea" : (day.left ?? "—"), .primary)
@@ -283,7 +270,7 @@ struct LargeView: View {
                 HStack {
                     Text("ESTA SEMANA").font(.system(size: 9, weight: .semibold)).tracking(0.5)
                     Spacer()
-                    Text(Fmt.duration(week.filter { !$0.isFuture }.reduce(0) { $0 + $1.productive }))
+                    Text("\(Fmt.duration(week.filter { !$0.isFuture }.reduce(0) { $0 + $1.desktime })) trabajado")
                         .font(.system(size: 10, weight: .semibold, design: .rounded))
                 }
                 .foregroundStyle(.secondary)

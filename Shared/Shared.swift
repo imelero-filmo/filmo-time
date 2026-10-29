@@ -93,6 +93,12 @@ struct DayData {
     var activeProject: ProjectUsage?
 
     func apps(_ kind: AppKind) -> [AppUsage] { apps.filter { $0.kind == kind } }
+
+    /// Time worked: everything DeskTime tracked on the computer, whatever the app.
+    var worked: Double { desktime }
+    /// Worked time that was not productive, split by the app categories.
+    var unproductiveTime: Double { min(total(.unproductive), max(desktime - productive, 0)) }
+    var neutralTime: Double { max(desktime - productive - unproductiveTime, 0) }
     func total(_ kind: AppKind) -> Double { apps(kind).reduce(0) { $0 + $1.seconds } }
 
     static func parse(_ j: [String: Any]) -> DayData {
@@ -313,6 +319,51 @@ extension DeskTimeAPI {
             var out: [WeekDay] = []
             for try await w in group { out.append(w) }
             return out.sorted { $0.date < $1.date }
+        }
+    }
+}
+
+// MARK: - Worked time breakdown
+
+/// Worked time split into productive, neutral and unproductive, so nobody
+/// reads the productive figure as their whole working time.
+struct WorkBreakdown: View {
+    let day: DayData
+    var legend = true
+    var height: CGFloat = 6
+
+    var body: some View {
+        let total = max(day.worked, 1)
+        let parts: [(String, Double, Color)] = [
+            ("Productivo", day.productive, Theme.brand),
+            ("Neutral", day.neutralTime, Color.secondary.opacity(0.45)),
+            ("Improductivo", day.unproductiveTime, Theme.red),
+        ]
+        VStack(alignment: .leading, spacing: 6) {
+            GeometryReader { g in
+                HStack(spacing: 2) {
+                    ForEach(parts.filter { $0.1 > 0 }, id: \.0) { p in
+                        Capsule().fill(p.2).frame(width: max(g.size.width * p.1 / total - 2, 3))
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Capsule().fill(Color.primary.opacity(0.08)))
+            }
+            .frame(height: height)
+            if legend {
+                HStack(spacing: 10) {
+                    ForEach(parts, id: \.0) { p in
+                        HStack(spacing: 4) {
+                            Circle().fill(p.2).frame(width: 6, height: 6)
+                            Text(p.0).foregroundStyle(.secondary)
+                            Text(Fmt.duration(p.1)).fontWeight(.semibold).monospacedDigit()
+                        }
+                    }
+                }
+                .font(.system(size: 10))
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+            }
         }
     }
 }

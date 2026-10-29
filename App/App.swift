@@ -141,7 +141,7 @@ final class Store: ObservableObject {
 
     var menuBarTitle: String {
         guard let d = today else { return hasKey ? "…" : AppInfo.name }
-        return "\(Fmt.duration(d.productive)) · \(Fmt.percent(d.productivity))"
+        return "\(Fmt.duration(d.worked)) · \(Fmt.duration(d.productive)) prod."
     }
 }
 
@@ -164,7 +164,7 @@ struct WidgetView: View {
     @Namespace private var tabUnderline
 
     static let width: CGFloat = 340
-    static let contentHeight: CGFloat = 300
+    static let contentHeight: CGFloat = 345
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -396,12 +396,12 @@ struct SummaryTab: View {
         VStack(alignment: .leading, spacing: 16) {
             HStack(alignment: .center) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Label2(text: "Tiempo productivo")
-                    Text(Fmt.duration(day.productive))
+                    Label2(text: "Tiempo trabajado")
+                    Text(Fmt.duration(day.worked))
                         .font(.system(size: 38, weight: .semibold).monospacedDigit())
                         .contentTransition(.numericText())
                     HStack(spacing: 6) {
-                        Text("de \(Fmt.duration(day.desktime)) en DeskTime")
+                        Text("\(Fmt.duration(day.productive)) productivo")
                         if let avg = store.weekAverageExcludingSelected, avg > 0 {
                             let delta = day.productive - avg
                             Text("\(delta >= 0 ? "▲" : "▼") \(Fmt.duration(abs(delta)))")
@@ -417,6 +417,9 @@ struct SummaryTab: View {
                 MonoRing(value: day.efficiency, title: "Eficacia")
                     .help("Tiempo productivo comparado con tu jornada objetivo")
             }
+
+            WorkBreakdown(day: day)
+                .help("Todo el tiempo con actividad en el ordenador, según el tipo de app")
 
             let online = day.isOnline && store.isToday
             HStack(spacing: 8) {
@@ -602,11 +605,10 @@ struct WeekTab: View {
         let desk = worked.reduce(0) { $0 + $1.desktime }
         // Weighted by DeskTime time, so it matches DeskTime's own daily figure.
         let prod = desk > 0 ? worked.reduce(0) { $0 + $1.productivity * $1.desktime } / desk : 0
-        let best = worked.max { $0.productive < $1.productive }
         return HStack(spacing: 8) {
+            Stat(title: "Trabajado", value: Fmt.duration(desk))
             Stat(title: "Productivo", value: Fmt.duration(total))
             Stat(title: "Productividad", value: Fmt.percent(prod))
-            Stat(title: "Mejor día", value: best.map { Fmt.weekdayShort($0.date) } ?? "—")
         }
     }
 
@@ -614,6 +616,10 @@ struct WeekTab: View {
         Chart(store.week) { d in
             BarMark(x: .value("Día", d.label), y: .value("Horas", d.productive / 3600))
                 .foregroundStyle(Theme.brand.opacity(opacity(d)))
+                .cornerRadius(3)
+            // Stacked on top: the rest of the worked time (neutral and unproductive).
+            BarMark(x: .value("Día", d.label), y: .value("Horas", max(d.desktime - d.productive, 0) / 3600))
+                .foregroundStyle(Color.secondary.opacity(0.35 * opacity(d)))
                 .cornerRadius(3)
         }
         .chartYAxis {
@@ -652,7 +658,7 @@ struct WeekTab: View {
             HStack(alignment: .firstTextBaseline) {
                 Text(Fmt.longDay(d.date)).font(.system(size: 11, weight: .semibold))
                 Text(d.isFuture ? "Todavía no ha llegado" : d.desktime == 0 ? "Sin actividad"
-                     : "\(Fmt.duration(d.productive)) · \(Fmt.percent(d.productivity))")
+                     : "\(Fmt.duration(d.desktime)) trabajado · \(Fmt.duration(d.productive)) prod.")
                     .font(.system(size: 11).monospacedDigit())
                     .foregroundStyle(.secondary)
                 Spacer()

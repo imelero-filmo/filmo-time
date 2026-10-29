@@ -31,7 +31,8 @@ Se actualiza solo cada 5 minutos, con los mismos datos que la barra de menús.
 QUÉ SIGNIFICA CADA DATO
 =======================
 
-Tiempo productivo  Tiempo en apps y webs que DeskTime marca como productivas.
+Tiempo trabajado   Todo el tiempo con actividad en el ordenador (productivo, neutral e improductivo).
+Tiempo productivo  La parte del tiempo trabajado en apps que DeskTime marca como productivas.
 Productividad      Qué parte de tu tiempo frente al ordenador fue productiva.
 Eficacia           Tu tiempo productivo comparado con tu jornada objetivo.
 

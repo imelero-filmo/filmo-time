@@ -18,10 +18,10 @@ macOS 14 o posterior · Mac con Apple Silicon · Gratis
 
 Filmo Time lee tus datos de [DeskTime](https://desktime.com) y te los enseña sin abrir el navegador:
 
-- **En la barra de menús:** tu tiempo productivo de hoy siempre visible. Un clic abre el resumen.
+- **En la barra de menús:** el tiempo que llevas trabajado hoy y cuánto de él ha sido productivo. Un clic abre el resumen.
 - **En el escritorio:** un widget en cuatro tamaños que se actualiza solo.
 
-<p align="center"><img src="docs/barra-de-menus.png" width="640" alt="Filmo Time en la barra de menús"><br><sub>Siempre visible en la barra de menús: tiempo productivo y productividad de hoy</sub></p>
+<p align="center"><img src="docs/barra-de-menus.png" width="640" alt="Filmo Time en la barra de menús"><br><sub>Siempre visible en la barra de menús</sub></p>
 
 <table>
 <tr>
@@ -99,7 +99,9 @@ Clic derecho en el icono **F** de la barra de menús → activa **Abrir al inici
 
 | Dato | Significado |
 |---|---|
-| **Tiempo productivo** | Tiempo en apps y webs que DeskTime marca como productivas. |
+| **Tiempo trabajado** | Todo el tiempo con actividad en el ordenador, sea en apps productivas, neutrales o improductivas. Es el dato principal. |
+| **Productivo · Neutral · Improductivo** | Cómo se reparte tu tiempo trabajado según el tipo de app. Que algo sea neutral (correo, ajustes…) no significa que no hayas trabajado. |
+| **Tiempo productivo** | La parte del tiempo trabajado en apps y webs que DeskTime marca como productivas. |
 | **Productividad** | Qué parte de tu tiempo frente al ordenador fue productiva. |
 | **Eficacia** | Tu tiempo productivo comparado con tu jornada objetivo. Llega al 100 % al completar la jornada. |
 | **Llegada** | Primera actividad del día. En rojo si es después del inicio de tu jornada. |
