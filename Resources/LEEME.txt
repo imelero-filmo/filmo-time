@@ -15,7 +15,7 @@ CÓMO INSTALARLO
 
 4. Listo. Aparece un icono con la F de Filmo en la barra de menús, arriba a la derecha:
    - Clic: resumen del día y de la semana.
-   - Clic derecho: menú (actualizar, abrir DeskTime, abrir al iniciar sesión, salir).
+   - Clic derecho: menú (actualizar, ver panel completo, abrir al iniciar sesión, salir).
    Recomendado: activa «Abrir al iniciar sesión».
 
 
@@ -32,7 +32,7 @@ QUÉ SIGNIFICA CADA DATO
 =======================
 
 Tiempo trabajado   Todo el tiempo con actividad en el ordenador (productivo, neutral e improductivo).
-Tiempo productivo  La parte del tiempo trabajado en apps que DeskTime marca como productivas.
+Tiempo productivo  La parte del tiempo trabajado en apps marcadas como productivas.
 Productividad      Qué parte de tu tiempo frente al ordenador fue productiva.
 Eficacia           Tu tiempo productivo comparado con tu jornada objetivo.
 

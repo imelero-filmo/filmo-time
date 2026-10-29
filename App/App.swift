@@ -238,7 +238,7 @@ struct WidgetView: View {
                 Section("\(AppInfo.name) \(AppInfo.version)") {
                     Button("Novedades de esta versión…") { NSWorkspace.shared.open(AppInfo.changelogURL) }
                 }
-                Button("Abrir DeskTime") { NSWorkspace.shared.open(URL(string: "https://desktime.com/app/my")!) }
+                Button("Ver panel completo") { NSWorkspace.shared.open(URL(string: "https://desktime.com/app/my")!) }
                 Button("Configurar API key…", action: actions.openSettings)
                 Button("Buscar actualizaciones…", action: actions.checkUpdates)
                 Toggle("Abrir al iniciar sesión", isOn: Binding(get: actions.launchesAtLogin, set: { _ in actions.toggleLogin() }))
@@ -313,7 +313,7 @@ struct WidgetView: View {
             Button {
                 NSWorkspace.shared.open(URL(string: "https://desktime.com/app/my")!)
             } label: {
-                HStack(spacing: 3) { Text("Abrir DeskTime"); Image(systemName: "arrow.up.right").imageScale(.small) }
+                HStack(spacing: 3) { Text("Ver panel completo"); Image(systemName: "arrow.up.right").imageScale(.small) }
             }
             .buttonStyle(.plain)
             .foregroundStyle(Theme.brand)
@@ -877,7 +877,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         item("Mostrar resumen", #selector(menuShow))
         item("Actualizar", #selector(menuRefresh), "r")
         m.addItem(.separator())
-        item("Abrir DeskTime", #selector(openDeskTime), "o")
+        item("Ver panel completo", #selector(openDeskTime), "o")
         item("Configurar API key…", #selector(menuSettings), ",")
         item("Buscar actualizaciones…", #selector(menuCheckUpdates))
         item("Abrir al iniciar sesión", #selector(menuToggleLogin), state: SMAppService.mainApp.status == .enabled)

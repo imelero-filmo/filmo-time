@@ -122,7 +122,7 @@ let allAchievements: [Achievement] = [
         $0.worked >= fullDay && $0.today.productivity >= 98
     },
     Achievement(id: "eficacia-100", emoji: "💯", title: "Eficacia de manual",
-                detail: "Llegaste al 100 % de eficacia. DeskTime te mira con respeto.") {
+                detail: "Llegaste al 100 % de eficacia. Filmo te mira con respeto.") {
         $0.today.efficiency >= 100
     },
     Achievement(id: "santo", emoji: "😇", title: "Santo varón",
@@ -209,8 +209,8 @@ let allAchievements: [Achievement] = [
                 detail: "Abriste el resumen 50 veces en un día. El tiempo no pasa más rápido por mirarlo.") {
         $0.popoverOpensToday >= 50
     },
-    Achievement(id: "desktimeception", emoji: "🪞", title: "DeskTime-ception",
-                detail: "Más de media hora en desktime.com mirando… tu DeskTime.") {
+    Achievement(id: "desktimeception", emoji: "🪞", title: "Inception",
+                detail: "Más de media hora en el panel web mirando… tu propio tiempo.") {
         $0.today.seconds(matching: AppKeys.deskTime) > 30 * 60
     },
 ]

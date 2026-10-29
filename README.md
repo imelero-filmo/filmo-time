@@ -4,7 +4,7 @@
 
 # Filmo Time
 
-**Tu DeskTime de un vistazo: en la barra de menús y como widget del escritorio de macOS.**
+**Tu tiempo de trabajo de un vistazo: en la barra de menús y como widget del escritorio de macOS.**
 
 [![Descargar para macOS](https://img.shields.io/badge/Descargar_para_macOS-0B0B0C?style=for-the-badge&logo=apple&logoColor=F5F5F2)](https://github.com/imelero-filmo/filmo-time/releases/latest/download/Filmo-Time.dmg)
 
@@ -97,7 +97,7 @@ Clic derecho en el icono **F** de la barra de menús → activa **Abrir al inici
 | Icono **F** en la barra de menús | **Clic:** abre el resumen · **Clic derecho:** menú |
 | Flechas **‹ ›** junto a la fecha | Ver días anteriores |
 | Pestaña **Semana** | Pasa el ratón por una barra para ver el día; haz clic para abrirlo |
-| Widget | Haz clic para abrir tu DeskTime en el navegador |
+| Widget | Haz clic para ver el panel completo en el navegador |
 
 **Actualización de datos:** cada 5 minutos. La barra de menús, el desplegable y el widget usan la misma consulta, así que siempre muestran lo mismo.
 
@@ -107,11 +107,11 @@ Clic derecho en el icono **F** de la barra de menús → activa **Abrir al inici
 |---|---|
 | **Tiempo trabajado** | Todo el tiempo con actividad en el ordenador, sea en apps productivas, neutrales o improductivas. Es el dato principal. |
 | **Productivo · Neutral · Improductivo** | Cómo se reparte tu tiempo trabajado según el tipo de app. Que algo sea neutral (correo, ajustes…) no significa que no hayas trabajado. |
-| **Tiempo productivo** | La parte del tiempo trabajado en apps y webs que DeskTime marca como productivas. |
+| **Tiempo productivo** | La parte del tiempo trabajado en apps y webs marcadas como productivas. |
 | **Productividad** | Qué parte de tu tiempo frente al ordenador fue productiva. |
 | **Eficacia** | Tu tiempo productivo comparado con tu jornada objetivo. Llega al 100 % al completar la jornada. |
 | **Llegada** | Primera actividad del día. En rojo si es después del inicio de tu jornada. |
-| **Jornada** | Tu horario de DeskTime y cuánto queda. |
+| **Jornada** | Tu horario y cuánto queda. |
 
 ---
 
@@ -162,11 +162,11 @@ Compilar requiere Xcode (o sus herramientas de línea de comandos) y un certific
 ### Publicar una versión
 
 ```bash
-VERSION=1.1.5 ./build.sh --dmg
-gh release create v1.1.5 dist/Filmo-Time.dmg --title "Filmo Time 1.1.5" --notes "Qué cambia"
+VERSION=1.1.6 ./build.sh --dmg
+gh release create v1.1.6 dist/Filmo-Time.dmg --title "Filmo Time 1.1.6" --notes "Qué cambia"
 ```
 
-- La etiqueta tiene que ser `v` + la misma versión (`v1.1.5`) y el archivo adjunto llamarse `Filmo-Time.dmg`.
+- La etiqueta tiene que ser `v` + la misma versión (`v1.1.6`) y el archivo adjunto llamarse `Filmo-Time.dmg`.
 - Las apps instaladas lo detectan solas (una vez al día) y ofrecen actualizar. Solo instalan versiones firmadas por el mismo certificado.
 - El enlace de descarga del README apunta siempre a la última release.
 
