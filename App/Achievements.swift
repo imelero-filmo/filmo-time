@@ -170,8 +170,8 @@ let allAchievements: [Achievement] = [
         $0.today.seconds(matching: AppKeys.chat) > 3 * hour
     },
     Achievement(id: "hacker", emoji: "💻", title: "Hacker de Hollywood",
-                detail: "Más de 7 horas en el terminal o el editor. Estoy dentro.") {
-        $0.today.seconds(matching: AppKeys.code) > 7 * hour
+                detail: "Más de 5 horas en el terminal o el editor. Estoy dentro.") {
+        $0.today.seconds(matching: AppKeys.code) > 5 * hour
     },
     Achievement(id: "pixel", emoji: "🎨", title: "Pixel perfect",
                 detail: "Más de 6 horas en Figma. Ese botón ya estaba centrado.") {
