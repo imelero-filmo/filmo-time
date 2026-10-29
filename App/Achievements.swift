@@ -115,8 +115,8 @@ let allAchievements: [Achievement] = [
         $0.worked >= fullDay && $0.today.productivity >= 98
     },
     Achievement(id: "eficacia-100", emoji: "💯", title: "Eficacia de manual",
-                detail: "Llegaste al 120 % de eficacia. DeskTime te mira con respeto.") {
-        $0.today.efficiency >= 120
+                detail: "Llegaste al 100 % de eficacia. DeskTime te mira con respeto.") {
+        $0.today.efficiency >= 100
     },
     Achievement(id: "santo", emoji: "😇", title: "Santo varón",
                 detail: "9 horas trabajadas y ni un minuto improductivo.") {
