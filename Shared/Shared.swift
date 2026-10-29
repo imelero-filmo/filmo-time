@@ -375,13 +375,25 @@ struct WorkBreakdown: View {
 enum Snapshot {
     static let url = KeyStore.fileURL.deletingLastPathComponent().appendingPathComponent("snapshot.json")
 
-    static func save(day: [String: Any], week: [WeekDay]) {
+    /// Saves the data and returns whether anything the widget shows changed.
+    @discardableResult
+    static func save(day: [String: Any], week: [WeekDay]) -> Bool {
+        let previous = load()
         guard let weekData = try? JSONEncoder().encode(week),
-              let weekJSON = try? JSONSerialization.jsonObject(with: weekData) else { return }
+              let weekJSON = try? JSONSerialization.jsonObject(with: weekData) else { return false }
         let obj: [String: Any] = ["fetchedAt": Date().timeIntervalSince1970, "day": day, "week": weekJSON]
-        guard let data = try? JSONSerialization.data(withJSONObject: obj) else { return }
+        guard let data = try? JSONSerialization.data(withJSONObject: obj) else { return false }
         try? data.write(to: url, options: .atomic)
         try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
+        guard let p = previous else { return true }
+        let new = DayData.parse(day)
+        // Compared at minute precision, the resolution the widget displays.
+        func key(_ d: DayData) -> [Int] {
+            [d.worked, d.productive, d.neutralTime, d.unproductiveTime, d.atWork, d.productivity * 60, d.efficiency * 60]
+                .map { Int($0 / 60) } + [d.isOnline ? 1 : 0]
+        }
+        return key(p.day) != key(new) || p.day.left != new.left || p.day.apps.first?.name != new.apps.first?.name
+            || !Calendar.current.isDate(p.fetchedAt, inSameDayAs: Date())
     }
 
     static func load() -> (fetchedAt: Date, day: DayData, week: [WeekDay])? {

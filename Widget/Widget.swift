@@ -35,8 +35,8 @@ struct Provider: TimelineProvider {
     func getTimeline(in context: Context, completion: @escaping (Timeline<Entry>) -> Void) {
         Task {
             let entry = await load()
-            // Same 5-minute rhythm as the app; WidgetKit may stretch it to save battery.
-            let minutes = entry.day?.isOnline == true ? 5 : 30
+            // The app pushes new data when it has it, so the widget itself asks rarely.
+            let minutes = entry.day?.isOnline == true ? 15 : 60
             completion(Timeline(entries: [entry], policy: .after(Date().addingTimeInterval(Double(minutes) * 60))))
         }
     }
@@ -94,6 +94,11 @@ struct DeskTimeContent: View {
             }
         }
         .redacted(reason: entry.redacted ? .placeholder : [])
+        // No animation between entries: macOS would otherwise slide the new
+        // content in when it redraws the widget, e.g. after switching desktops.
+        .transition(.identity)
+        .contentTransition(.identity)
+        .transaction { $0.animation = nil }
         .widgetURL(entry.day?.profileURL ?? URL(string: "https://desktime.com/app/my"))
     }
 }
@@ -162,7 +167,6 @@ struct BigTime: View {
                 .font(.system(size: size, weight: .bold, design: .rounded))
                 .minimumScaleFactor(0.6)
                 .lineLimit(1)
-                .contentTransition(.numericText())
             Text("\(Fmt.duration(day.productive)) productivo")
                 .font(.system(size: 10, weight: .medium))
                 .foregroundStyle(.secondary)

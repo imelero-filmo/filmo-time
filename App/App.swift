@@ -104,8 +104,9 @@ final class Store: ObservableObject {
             let todayWeek = try await api.week(around: Date(), today: t, known: knownDays)
             remember(todayWeek)
             today = t
-            Snapshot.save(day: todayJSON, week: todayWeek)
-            WidgetCenter.shared.reloadAllTimelines()
+            if Snapshot.save(day: todayJSON, week: todayWeek) {
+                WidgetCenter.shared.reloadAllTimelines()
+            }
 
             if Calendar.current.isDateInToday(requested) {
                 day = t
