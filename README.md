@@ -21,6 +21,8 @@ Filmo Time lee tus datos de [DeskTime](https://desktime.com) y te los enseña si
 - **En la barra de menús:** tu tiempo productivo de hoy siempre visible. Un clic abre el resumen.
 - **En el escritorio:** un widget en cuatro tamaños que se actualiza solo.
 
+<p align="center"><img src="docs/barra-de-menus.png" width="640" alt="Filmo Time en la barra de menús"><br><sub>Siempre visible en la barra de menús: tiempo productivo y productividad de hoy</sub></p>
+
 <table>
 <tr>
 <td align="center"><img src="docs/popover-resumen.png" width="260"><br><sub><b>Resumen</b> del día</sub></td>
