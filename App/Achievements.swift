@@ -54,7 +54,7 @@ enum AppKeys {
                          "threads.net", "bsky.app", "mastodon"]
     static let mail = ["mail", "outlook", "spark", "superhuman"]
     static let meetings = ["zoom", "meet.google.com", "teams", "webex", "facetime", "around"]
-    static let slack = ["slack"]
+    static let chat = ["chat.google.com", "whatsapp", "telegram", "discord", "signal"]
     static let code = ["terminal", "iterm", "xcode", "code", "cursor", "warp", "ghostty", "intellij",
                        "pycharm", "webstorm", "zed", "nova", "sublime"]
     static let figma = ["figma"]
@@ -165,9 +165,9 @@ let allAchievements: [Achievement] = [
                 detail: "Más de 4 horas en videollamadas. Esto podría haber sido un email.") {
         $0.today.seconds(matching: AppKeys.meetings) > 4 * hour
     },
-    Achievement(id: "slackero", emoji: "💬", title: "Slackero",
-                detail: "Más de 3 horas en Slack. ¿Trabajas o chateas?") {
-        $0.today.seconds(matching: AppKeys.slack) > 3 * hour
+    Achievement(id: "chatero", emoji: "💬", title: "Chatero",
+                detail: "Más de 3 horas en Google Chat, WhatsApp o Telegram. ¿Trabajas o chateas?") {
+        $0.today.seconds(matching: AppKeys.chat) > 3 * hour
     },
     Achievement(id: "hacker", emoji: "💻", title: "Hacker de Hollywood",
                 detail: "Más de 7 horas en el terminal o el editor. Estoy dentro.") {
