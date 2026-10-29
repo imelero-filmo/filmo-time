@@ -33,14 +33,9 @@ Filmo Time lee tus datos de [DeskTime](https://desktime.com) y te los enseña si
 
 ### 🏆 Logros
 
-Hay **32 logros**, con una notificación cada vez que desbloqueas uno:
-
-- **De productividad:** se ven desde el principio, en gris, con una barra que te dice cuánto te falta (por ejemplo, «5h 10m de 7h · 84 % de 98 %»).
-- **El resto:** ocultos. No sabrás cuáles son hasta que los consigas. Algunos te harán sentir orgulloso. Otros, no tanto.
+Hay **32 logros**: unos visibles, con su progreso, y otros ocultos hasta que los consigas. Cada vez que desbloqueas uno, te llega una notificación.
 
 <p align="center"><img src="docs/popover-logros.png" width="260" alt="Pestaña Logros"></p>
-
-> Los logros que dependen de un porcentaje de la jornada solo cuentan en días de **7 horas trabajadas o más**.
 
 ### Widgets
 

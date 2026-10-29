@@ -397,7 +397,8 @@ final class Achievements: ObservableObject {
 
     /// Unlocks a sample set, for screenshots in demo mode.
     func loadDemo() {
-        let ids = ["hola", "ai-addict", "madrugador", "infiel", "hacker", "reunionitis", "suizo"]
+        // Only productivity ones: the screenshot must not give away hidden achievements.
+        let ids = ["eficacia-100", "sin-casa"]
         for (i, id) in ids.enumerated() { state.unlocked[id] = Date().addingTimeInterval(Double(-i) * 86400) }
         state.seen = Set(ids.dropFirst(2))
         lastContext = AchievementContext(today: Demo.day, previous: nil, now: Date(), week: Demo.week(around: Date()),
