@@ -412,6 +412,12 @@ enum Snapshot {
 enum AppInfo {
     /// Display name set by build.sh, so renaming the app needs no code change.
     static let name = Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String ?? "Filmo Time"
+    static let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
+    /// Release notes of the running version on GitHub.
+    static var changelogURL: URL {
+        URL(string: "https://github.com/imelero-filmo/filmo-time/releases/tag/v\(version)")
+            ?? URL(string: "https://github.com/imelero-filmo/filmo-time/releases")!
+    }
 
     /// The Filmo "F" symbol as a template image, tinted by whatever draws it.
     static let symbol: NSImage? = {

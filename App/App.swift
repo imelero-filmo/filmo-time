@@ -234,6 +234,9 @@ struct WidgetView: View {
                 Image(systemName: "ellipsis").font(.system(size: 12, weight: .semibold)).frame(width: 24, height: 24)
             } else {
             Menu {
+                Section("\(AppInfo.name) \(AppInfo.version)") {
+                    Button("Novedades de esta versión…") { NSWorkspace.shared.open(AppInfo.changelogURL) }
+                }
                 Button("Abrir DeskTime") { NSWorkspace.shared.open(URL(string: "https://desktime.com/app/my")!) }
                 Button("Configurar API key…", action: actions.openSettings)
                 Button("Buscar actualizaciones…", action: actions.checkUpdates)
@@ -865,6 +868,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             if let state { i.state = state ? .on : .off }
             m.addItem(i)
         }
+        let version = NSMenuItem(title: "\(AppInfo.name) \(AppInfo.version)", action: nil, keyEquivalent: "")
+        version.isEnabled = false
+        m.addItem(version)
+        item("Novedades de esta versión…", #selector(openChangelog))
+        m.addItem(.separator())
         item("Mostrar resumen", #selector(menuShow))
         item("Actualizar", #selector(menuRefresh), "r")
         m.addItem(.separator())
@@ -881,6 +889,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     @objc private func menuRefresh() { Task { await store.refresh() } }
     @objc private func openDeskTime() { NSWorkspace.shared.open(URL(string: "https://desktime.com/app/my")!) }
     @objc private func menuSettings() { openSettings() }
+    @objc private func openChangelog() { NSWorkspace.shared.open(AppInfo.changelogURL) }
     @objc private func menuCheckUpdates() {
         popover.performClose(nil)
         Task { await updater.check(userInitiated: true) }
