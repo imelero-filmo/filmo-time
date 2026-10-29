@@ -150,6 +150,7 @@ final class Store: ObservableObject {
 
 struct Actions {
     var openSettings: () -> Void = {}
+    var checkUpdates: () -> Void = {}
     var toggleLogin: () -> Void = {}
     var launchesAtLogin: () -> Bool = { false }
 }
@@ -232,6 +233,7 @@ struct WidgetView: View {
             Menu {
                 Button("Abrir DeskTime") { NSWorkspace.shared.open(URL(string: "https://desktime.com/app/my")!) }
                 Button("Configurar API key…", action: actions.openSettings)
+                Button("Buscar actualizaciones…", action: actions.checkUpdates)
                 Toggle("Abrir al iniciar sesión", isOn: Binding(get: actions.launchesAtLogin, set: { _ in actions.toggleLogin() }))
                 Divider()
                 Button("Salir") { NSApp.terminate(nil) }
@@ -765,6 +767,7 @@ struct SettingsView: View {
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     let store: Store
+    let updater = Updater()
     private var statusItem: NSStatusItem!
     private let popover = NSPopover()
     private var settingsWindow: NSWindow?
@@ -779,11 +782,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         store.onChange = { [weak self] in self?.updateStatusItem() }
         store.start()
         if !store.hasKey { openSettings() }
+        if let i = CommandLine.arguments.firstIndex(of: "--install-dmg"), i + 1 < CommandLine.arguments.count {
+            // Exercises the update install from a local DMG.
+            Task { await updater.install(from: URL(fileURLWithPath: CommandLine.arguments[i + 1]), fallbackPage: nil) }
+        } else if !store.demo {
+            updater.start()
+        }
     }
 
     private func buildPopover() {
         let actions = Actions(
             openSettings: { [weak self] in self?.openSettings() },
+            checkUpdates: { [weak self] in self?.menuCheckUpdates() },
             toggleLogin: { [weak self] in self?.toggleLogin() },
             launchesAtLogin: { SMAppService.mainApp.status == .enabled })
         let host = NSHostingController(rootView: WidgetView(store: store, actions: actions))
@@ -849,6 +859,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         m.addItem(.separator())
         item("Abrir DeskTime", #selector(openDeskTime), "o")
         item("Configurar API key…", #selector(menuSettings), ",")
+        item("Buscar actualizaciones…", #selector(menuCheckUpdates))
         item("Abrir al iniciar sesión", #selector(menuToggleLogin), state: SMAppService.mainApp.status == .enabled)
         m.addItem(.separator())
         item("Salir", #selector(quit), "q")
@@ -859,6 +870,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     @objc private func menuRefresh() { Task { await store.refresh() } }
     @objc private func openDeskTime() { NSWorkspace.shared.open(URL(string: "https://desktime.com/app/my")!) }
     @objc private func menuSettings() { openSettings() }
+    @objc private func menuCheckUpdates() {
+        popover.performClose(nil)
+        Task { await updater.check(userInitiated: true) }
+    }
     @objc private func menuToggleLogin() { toggleLogin() }
     @objc private func quit() { NSApp.terminate(nil) }
 

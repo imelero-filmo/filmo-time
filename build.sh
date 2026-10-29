@@ -8,7 +8,7 @@ cd "$(dirname "$0")"
 export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
 
 APP_NAME="${APP_NAME:-Filmo Time}"   # shown in Finder, the menu bar and the widget gallery
-VERSION="1.0"
+VERSION="${VERSION:-1.0}"   # override per release: VERSION=1.1 ./build.sh --dmg
 BUNDLE_ID="io.filmo.time"
 APP="$APP_NAME.app"
 EXT="$APP/Contents/PlugIns/DeskTimeWidgetExtension.appex"
@@ -36,7 +36,7 @@ xcrun actool build/Assets.xcassets --compile "$APP/Contents/Resources" --platfor
 cp build/filmo-simbolo.png "$APP/Contents/Resources/"
 cp build/filmo-simbolo.png "$EXT/Contents/Resources/"
 
-swiftc "${FLAGS[@]}" -o "$APP/Contents/MacOS/DeskTimeWidget" App/App.swift Shared/Shared.swift
+swiftc "${FLAGS[@]}" -o "$APP/Contents/MacOS/DeskTimeWidget" App/App.swift App/Updater.swift Shared/Shared.swift
 # Widget extensions start in NSExtensionMain, not in their own main (Xcode does the same).
 swiftc "${FLAGS[@]}" -application-extension -Xlinker -e -Xlinker _NSExtensionMain \
   -o "$EXT/Contents/MacOS/DeskTimeWidgetExtension" Widget/Widget.swift Shared/Shared.swift

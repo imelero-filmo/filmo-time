@@ -124,9 +124,9 @@ Clic derecho en el icono **F** de la barra de menús → **Configurar API key…
 </details>
 
 <details>
-<summary><b>Cómo actualizo a una versión nueva</b></summary>
+<summary><b>Cómo se actualiza</b></summary>
 
-Descarga de nuevo el [DMG](https://github.com/imelero-filmo/filmo-time/releases/latest/download/Filmo-Time.dmg) y arrastra la app a Aplicaciones para reemplazarla. Tu API key y tus widgets se conservan.
+Sola. Filmo Time comprueba una vez al día si hay una versión nueva y te pregunta si quieres instalarla: pulsa **Actualizar ahora** y se reinicia con la nueva. También puedes buscarla a mano: clic derecho en el icono **F** → **Buscar actualizaciones…** Tu API key y tus widgets se conservan.
 </details>
 
 <details>
@@ -153,7 +153,16 @@ Compilar requiere Xcode (o sus herramientas de línea de comandos) y un certific
 ./build.sh --dmg       # genera dist/Filmo-Time.dmg para publicar
 ```
 
-Para publicar una versión: sube `VERSION` en `build.sh`, ejecuta `./build.sh --dmg` y adjunta `dist/Filmo-Time.dmg` a una nueva [release](https://github.com/imelero-filmo/filmo-time/releases/new). El enlace de descarga del README apunta siempre a la última.
+### Publicar una versión
+
+```bash
+VERSION=1.1 ./build.sh --dmg
+gh release create v1.1 dist/Filmo-Time.dmg --title "Filmo Time 1.1" --notes "Qué cambia"
+```
+
+- La etiqueta tiene que ser `v` + la misma versión (`v1.1`) y el archivo adjunto llamarse `Filmo-Time.dmg`.
+- Las apps instaladas lo detectan solas (una vez al día) y ofrecen actualizar. Solo instalan versiones firmadas por el mismo certificado.
+- El enlace de descarga del README apunta siempre a la última release.
 
 | Carpeta | Contenido |
 |---|---|
