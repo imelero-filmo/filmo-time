@@ -1,0 +1,42 @@
+CÓMO INSTALARLO
+===============
+
+1. Arrastra la app a la carpeta «Aplicaciones» (está al lado en esta misma ventana).
+
+2. Ábrela desde Aplicaciones. La primera vez macOS dirá que no puede verificarla,
+   porque no viene de la App Store. Para permitirla:
+   Ajustes del Sistema → Privacidad y seguridad → baja hasta «Seguridad»
+   → pulsa «Abrir igualmente» y confirma con tu contraseña.
+   Solo hace falta una vez.
+
+3. Te pedirá tu API key de DeskTime. Cada persona usa la suya:
+   entra en https://desktime.com/app/api, pulsa el botón para generar la clave,
+   cópiala y pégala en la ventana de la app.
+
+4. Listo. Aparece un icono con la F de Filmo en la barra de menús, arriba a la derecha:
+   - Clic: resumen del día y de la semana.
+   - Clic derecho: menú (actualizar, abrir DeskTime, abrir al iniciar sesión, salir).
+   Recomendado: activa «Abrir al iniciar sesión».
+
+
+PONER EL WIDGET EN EL ESCRITORIO
+================================
+
+Clic derecho en el escritorio → «Editar widgets…» → busca el nombre de la app
+→ elige el tamaño (pequeño, mediano, grande o extragrande) → «Hecho».
+
+Se actualiza solo cada 15 minutos (y más a menudo si la app está abierta).
+
+
+QUÉ SIGNIFICA CADA DATO
+=======================
+
+Tiempo productivo  Tiempo en apps y webs que DeskTime marca como productivas.
+Productividad      Qué parte de tu tiempo frente al ordenador fue productiva.
+Eficacia           Tu tiempo productivo comparado con tu jornada objetivo.
+
+
+DESINSTALAR
+===========
+
+Sal de la app (clic derecho en el icono → Salir) y borra la app de Aplicaciones.
