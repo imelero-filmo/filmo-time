@@ -295,7 +295,7 @@ struct WidgetView: View {
             }
             Spacer()
             Button {
-                NSWorkspace.shared.open(store.day?.profileURL ?? URL(string: "https://desktime.com/app/my")!)
+                NSWorkspace.shared.open(URL(string: "https://desktime.com/app/my")!)
             } label: {
                 HStack(spacing: 3) { Text("Abrir DeskTime"); Image(systemName: "arrow.up.right").imageScale(.small) }
             }

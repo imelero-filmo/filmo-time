@@ -99,7 +99,7 @@ struct DeskTimeContent: View {
         .transition(.identity)
         .contentTransition(.identity)
         .transaction { $0.animation = nil }
-        .widgetURL(entry.day?.profileURL ?? URL(string: "https://desktime.com/app/my"))
+        .widgetURL(URL(string: "https://desktime.com/app/my"))
     }
 }
 
