@@ -138,21 +138,8 @@ let allAchievements: [Achievement] = [
         $0.weekday == 6 && $0.worked >= 10 * hour && $0.today.productivity >= 90
     },
     Achievement(id: "racha", emoji: "🔥", title: "En racha",
-                detail: "10 jornadas completas seguidas por encima del 85 % de productividad.") { c in
-        var streak = 0
-        var day = c.calendar.startOfDay(for: c.now)
-        for _ in 0..<30 {
-            if let s = c.history[Fmt.ymd(day)], s.worked >= fullDay {
-                guard s.productivity > 85 else { break }
-                streak += 1
-                if streak >= 10 { return true }
-            } else if c.calendar.isDate(day, inSameDayAs: c.now) == false,
-                      ![1, 7].contains(c.calendar.component(.weekday, from: day)) {
-                break  // A weekday without a full day breaks the streak; weekends do not.
-            }
-            day = c.calendar.date(byAdding: .day, value: -1, to: day)!
-        }
-        return false
+                detail: "10 jornadas completas seguidas por encima del 85 % de productividad.") {
+        currentStreak($0) >= 10
     },
     Achievement(id: "maraton", emoji: "🏃", title: "Maratón",
                 detail: "42,195 horas trabajadas en una semana, como los kilómetros de un maratón. Hidrátate.") {
@@ -228,6 +215,60 @@ let allAchievements: [Achievement] = [
     },
 ]
 
+/// Full working days in a row above 85 % productivity, ending today.
+/// Weekends never break it; today only counts once it is a full day.
+func currentStreak(_ c: AchievementContext) -> Int {
+    var streak = 0
+    var day = c.calendar.startOfDay(for: c.now)
+    for _ in 0..<40 {
+        let isToday = c.calendar.isDate(day, inSameDayAs: c.now)
+        if let s = c.history[Fmt.ymd(day)], s.worked >= fullDay {
+            guard s.productivity > 85 else { break }
+            streak += 1
+        } else if !isToday, ![1, 7].contains(c.calendar.component(.weekday, from: day)) {
+            break
+        }
+        day = c.calendar.date(byAdding: .day, value: -1, to: day)!
+    }
+    return streak
+}
+
+// MARK: - Progress
+
+/// Productivity achievements are visible before unlocking, with how close you are.
+/// The fraction is the most limiting requirement, so it never overstates progress.
+let progressTrackers: [String: (AchievementContext) -> (fraction: Double, text: String)] = [
+    "sin-casa": { c in
+        (c.worked / (12 * hour), "\(Fmt.duration(c.worked)) de 12h hoy")
+    },
+    "francotirador": { c in
+        (min(c.worked / fullDay, c.today.productivity / 98),
+         "\(Fmt.duration(c.worked)) de 7h · \(Fmt.percent(c.today.productivity)) de 98 %")
+    },
+    "eficacia-100": { c in
+        (c.today.efficiency / 100, "\(Fmt.percent(c.today.efficiency)) de eficacia hoy")
+    },
+    "santo": { c in
+        c.today.unproductiveTime >= 60
+            ? (0, "Hoy ya llevas \(Fmt.duration(c.today.unproductiveTime)) improductivos")
+            : (c.worked / (9 * hour), "\(Fmt.duration(c.worked)) de 9h sin nada improductivo")
+    },
+    "viernes-cohete": { c in
+        c.weekday != 6
+            ? (0, "Solo cuenta los viernes")
+            : (min(c.worked / (10 * hour), c.today.productivity / 90),
+               "\(Fmt.duration(c.worked)) de 10h · \(Fmt.percent(c.today.productivity)) de 90 %")
+    },
+    "racha": { c in
+        let n = currentStreak(c)
+        return (Double(n) / 10, "\(n) de 10 días seguidos al 85 %")
+    },
+    "maraton": { c in
+        let w = c.week.reduce(0) { $0 + $1.desktime }
+        return (w / (42.195 * hour), "\(Fmt.duration(w)) de 42h 12m esta semana")
+    },
+]
+
 // MARK: - Live triggers
 
 /// The Mac telling us you switched to an app, the moment it happens.
@@ -281,6 +322,8 @@ final class Achievements: ObservableObject {
     }
 
     @Published private(set) var state = State()
+    /// Latest evaluation context, for the progress of visible achievements.
+    @Published private(set) var lastContext: AchievementContext?
     private let persist: Bool
     private var previousToday: DayData?
     private static let url = KeyStore.fileURL.deletingLastPathComponent().appendingPathComponent("achievements.json")
@@ -322,6 +365,7 @@ final class Achievements: ObservableObject {
             popoverOpensToday: state.opensDay == Fmt.ymd(Date()) ? state.opens : 0,
             isFirstDay: state.firstDay == Fmt.ymd(Date()))
         previousToday = today
+        lastContext = ctx
         unlock(allAchievements.filter { state.unlocked[$0.id] == nil && $0.check(ctx) })
     }
 
@@ -356,6 +400,8 @@ final class Achievements: ObservableObject {
         let ids = ["hola", "ai-addict", "madrugador", "infiel", "hacker", "reunionitis", "suizo"]
         for (i, id) in ids.enumerated() { state.unlocked[id] = Date().addingTimeInterval(Double(-i) * 86400) }
         state.seen = Set(ids.dropFirst(2))
+        lastContext = AchievementContext(today: Demo.day, previous: nil, now: Date(), week: Demo.week(around: Date()),
+                                         history: [:], popoverOpensToday: 0, isFirstDay: false)
     }
 
     private func save() {
@@ -387,7 +433,16 @@ struct AchievementsTab: View {
         let unlocked = allAchievements
             .filter { model.state.unlocked[$0.id] != nil }
             .sorted { model.state.unlocked[$0.id]! > model.state.unlocked[$1.id]! }
-        let locked = allAchievements.count - unlocked.count
+        let inProgress: [(Achievement, Double, String)] = allAchievements
+            .filter { model.state.unlocked[$0.id] == nil }
+            .compactMap { a in
+                guard let tracker = progressTrackers[a.id] else { return nil }
+                guard let ctx = model.lastContext else { return (a, 0, "Esperando datos de hoy…") }
+                let p = tracker(ctx)
+                return (a, min(max(p.fraction, 0), 0.99), p.text)
+            }
+            .sorted { $0.1 > $1.1 }
+        let hiddenCount = allAchievements.count - unlocked.count - inProgress.count
 
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 6) {
@@ -395,7 +450,7 @@ struct AchievementsTab: View {
                     Text("\(unlocked.count)").font(.system(size: 22, weight: .semibold).monospacedDigit())
                     Text("de \(allAchievements.count) logros").font(.system(size: 12)).foregroundStyle(.secondary)
                     Spacer()
-                    Text("\(locked) ocultos").font(.system(size: 11)).foregroundStyle(.secondary)
+                    Text("\(hiddenCount) ocultos").font(.system(size: 11)).foregroundStyle(.secondary)
                 }
                 GeometryReader { g in
                     ZStack(alignment: .leading) {
@@ -409,13 +464,23 @@ struct AchievementsTab: View {
             .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 8)
 
             // Snapshots cannot scroll: show one screenful.
-            let shown = isSnapshotRender ? Array(unlocked.prefix(4)) : unlocked
-            let hidden = isSnapshotRender ? min(locked, 1) : locked
-            let rows = VStack(spacing: 4) {
+            let shown = isSnapshotRender ? Array(unlocked.prefix(2)) : unlocked
+            let progress = isSnapshotRender ? Array(inProgress.prefix(3)) : inProgress
+            let hidden = isSnapshotRender ? 0 : hiddenCount
+            let rows = VStack(alignment: .leading, spacing: 4) {
                 ForEach(shown) { a in
                     AchievementRow(achievement: a, date: model.state.unlocked[a.id], isNew: !model.state.seen.contains(a.id))
                 }
-                ForEach(0..<hidden, id: \.self) { _ in LockedRow() }
+                if !progress.isEmpty {
+                    SectionLabel(text: "En progreso").padding(.top, 6)
+                    ForEach(progress, id: \.0.id) { a, fraction, text in
+                        ProgressRow(achievement: a, fraction: fraction, text: text)
+                    }
+                }
+                if hidden > 0 {
+                    SectionLabel(text: "Ocultos").padding(.top, 6)
+                    ForEach(0..<hidden, id: \.self) { _ in LockedRow() }
+                }
             }
             .padding(.horizontal, 12)
             if isSnapshotRender {
@@ -426,6 +491,54 @@ struct AchievementsTab: View {
         }
         // Opening the tab counts as having seen the new ones.
         .onDisappear { model.markAllSeen() }
+    }
+}
+
+struct SectionLabel: View {
+    let text: String
+    var body: some View {
+        Text(text.uppercased())
+            .font(.system(size: 9, weight: .semibold))
+            .tracking(0.6)
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 6)
+    }
+}
+
+/// A productivity achievement not unlocked yet: greyed out, with its progress.
+struct ProgressRow: View {
+    let achievement: Achievement
+    let fraction: Double
+    let text: String
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 10) {
+            Text(achievement.emoji)
+                .font(.system(size: 18))
+                .grayscale(1)
+                .opacity(0.45)
+                .frame(width: 30, height: 30)
+                .background(Circle().fill(Color.primary.opacity(0.04)))
+            VStack(alignment: .leading, spacing: 3) {
+                HStack {
+                    Text(achievement.title).font(.system(size: 12, weight: .semibold)).foregroundStyle(.secondary)
+                    Spacer()
+                    Text("\(Int((fraction * 100).rounded())) %")
+                        .font(.system(size: 10, weight: .semibold).monospacedDigit())
+                        .foregroundStyle(.secondary)
+                }
+                GeometryReader { g in
+                    ZStack(alignment: .leading) {
+                        Capsule().fill(Color.primary.opacity(0.08))
+                        Capsule().fill(Color.secondary).frame(width: max(g.size.width * fraction, 3))
+                    }
+                }
+                .frame(height: 3)
+                Text(text).font(.system(size: 10).monospacedDigit()).foregroundStyle(.tertiary).lineLimit(1)
+            }
+        }
+        .padding(.horizontal, 6).padding(.vertical, 6)
+        .help(achievement.detail)
     }
 }
 
