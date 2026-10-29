@@ -9,7 +9,7 @@ export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
 
 APP_NAME="${APP_NAME:-Filmo Time}"   # shown in Finder, the menu bar and the widget gallery
 VERSION="1.0"
-BUNDLE_ID="local.desktime-widget"
+BUNDLE_ID="io.filmo.time"
 APP="$APP_NAME.app"
 EXT="$APP/Contents/PlugIns/DeskTimeWidgetExtension.appex"
 FLAGS=(-O -parse-as-library -swift-version 5 -target arm64-apple-macos14)
@@ -19,12 +19,19 @@ mkdir -p build "$APP/Contents/MacOS" "$APP/Contents/Resources" "$EXT/Contents/Ma
 
 # Icons from the brand SVGs (macOS icons keep ~10% margin around the artwork).
 swiftc -O -o build/render Resources/render.swift
-rm -rf build/AppIcon.iconset && mkdir build/AppIcon.iconset
+# App icon as an asset catalog: the widget gallery and Finder read CFBundleIconName.
+SET=build/Assets.xcassets/AppIcon.appiconset
+rm -rf build/Assets.xcassets && mkdir -p "$SET"
+IMAGES=""
 for s in 16 32 128 256 512; do
-  ./build/render Resources/filmo-icono-app.svg build/AppIcon.iconset/icon_${s}x${s}.png $s 0.09
-  ./build/render Resources/filmo-icono-app.svg build/AppIcon.iconset/icon_${s}x${s}@2x.png $((s*2)) 0.09
+  ./build/render Resources/filmo-time-icono.svg "$SET/icon_${s}.png" $s 0.09
+  ./build/render Resources/filmo-time-icono.svg "$SET/icon_${s}@2x.png" $((s*2)) 0.09
+  IMAGES+="{\"idiom\":\"mac\",\"size\":\"${s}x${s}\",\"scale\":\"1x\",\"filename\":\"icon_${s}.png\"},"
+  IMAGES+="{\"idiom\":\"mac\",\"size\":\"${s}x${s}\",\"scale\":\"2x\",\"filename\":\"icon_${s}@2x.png\"},"
 done
-iconutil -c icns build/AppIcon.iconset -o "$APP/Contents/Resources/AppIcon.icns"
+echo "{\"images\":[${IMAGES%,}],\"info\":{\"version\":1,\"author\":\"xcode\"}}" > "$SET/Contents.json"
+xcrun actool build/Assets.xcassets --compile "$APP/Contents/Resources" --platform macosx \
+  --minimum-deployment-target 14.0 --app-icon AppIcon --output-partial-info-plist build/assets.plist >/dev/null
 ./build/render Resources/filmo-simbolo.svg build/filmo-simbolo.png 128
 cp build/filmo-simbolo.png "$APP/Contents/Resources/"
 cp build/filmo-simbolo.png "$EXT/Contents/Resources/"
@@ -53,7 +60,7 @@ plist() { # id executable package-type extra-xml
 </dict></plist>
 PLIST
 }
-plist "$BUNDLE_ID" DeskTimeWidget APPL '<key>LSUIElement</key><true/><key>CFBundleIconFile</key><string>AppIcon</string>' \
+plist "$BUNDLE_ID" DeskTimeWidget APPL '<key>LSUIElement</key><true/><key>CFBundleIconFile</key><string>AppIcon</string><key>CFBundleIconName</key><string>AppIcon</string>' \
   > "$APP/Contents/Info.plist"
 plist "$BUNDLE_ID.widget" DeskTimeWidgetExtension XPC! \
   '<key>NSExtension</key><dict><key>NSExtensionPointIdentifier</key><string>com.apple.widgetkit-extension</string></dict>' \
@@ -80,6 +87,7 @@ case "${1:-}" in
 --install)
   pkill -f "/Contents/MacOS/DeskTimeWidget$" || true
   rm -rf "/Applications/DeskTime Widget.app" "/Applications/$APP"
+  pluginkit -r "/Applications/$EXT" 2>/dev/null || true
   cp -R "$APP" /Applications/
   pluginkit -a "/Applications/$EXT"
   open "/Applications/$APP"

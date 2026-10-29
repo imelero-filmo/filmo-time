@@ -25,6 +25,9 @@ final class Store: ObservableObject {
     let demo: Bool
     var onChange: (() -> Void)?
     private var timer: Timer?
+    private var fastTimer: Timer?
+    /// Keeps App Nap from stretching the timers of this window-less app.
+    private var activity: NSObjectProtocol?
 
     init(demo: Bool) {
         self.demo = demo
@@ -34,9 +37,16 @@ final class Store: ObservableObject {
     var isToday: Bool { Calendar.current.isDateInToday(date) }
 
     func start() {
+        activity = ProcessInfo.processInfo.beginActivity(
+            options: .userInitiatedAllowingIdleSystemSleep, reason: "Keep menu bar time current")
         Task { await refresh() }
-        timer = Timer.scheduledTimer(withTimeInterval: 300, repeats: true) { [weak self] _ in
+        // Full refresh (day, week and widget) every 10 minutes...
+        timer = Timer.scheduledTimer(withTimeInterval: 600, repeats: true) { [weak self] _ in
             Task { @MainActor in await self?.refresh() }
+        }
+        // ...and today's numbers every 2 minutes, one request, for the menu bar.
+        fastTimer = Timer.scheduledTimer(withTimeInterval: 120, repeats: true) { [weak self] _ in
+            Task { @MainActor in await self?.refreshToday() }
         }
         NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didWakeNotification, object: nil, queue: .main
@@ -108,6 +118,19 @@ final class Store: ObservableObject {
         } catch {
             self.error = error.localizedDescription
         }
+    }
+
+    /// Lightweight update of today's data; leaves the week and the widget alone.
+    func refreshToday() async {
+        guard !demo, !loading, let key = KeyStore.read() else { return }
+        guard let j = try? await DeskTimeAPI(key: key).get("employee", date: Date()) else { return }
+        let parsed = DayData.parse(j)
+        today = parsed
+        if isToday {
+            day = parsed
+            lastUpdate = Date()
+        }
+        onChange?()
     }
 
     /// Productive-time average of the other worked days this week.
