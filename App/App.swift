@@ -7,7 +7,7 @@ import WidgetKit
 
 // MARK: - Store
 
-enum Tab: Hashable { case summary, apps, week }
+enum Tab: Hashable { case summary, apps, week, achievements }
 
 @MainActor
 final class Store: ObservableObject {
@@ -23,6 +23,7 @@ final class Store: ObservableObject {
     @Published var hasKey = KeyStore.read() != nil
 
     let demo: Bool
+    let achievements: Achievements
     var onChange: (() -> Void)?
     private var timer: Timer?
     /// Keeps App Nap from stretching the timer of this window-less app.
@@ -32,6 +33,7 @@ final class Store: ObservableObject {
 
     init(demo: Bool) {
         self.demo = demo
+        achievements = Achievements(persist: !demo && !isSnapshotRender)
         if demo { hasKey = true }
     }
 
@@ -104,6 +106,7 @@ final class Store: ObservableObject {
             let todayWeek = try await api.week(around: Date(), today: t, known: knownDays)
             remember(todayWeek)
             today = t
+            achievements.evaluate(today: t, week: todayWeek)
             if Snapshot.save(day: todayJSON, week: todayWeek) {
                 WidgetCenter.shared.reloadAllTimelines()
             }
@@ -249,12 +252,18 @@ struct WidgetView: View {
 
     private var tabBar: some View {
         HStack(spacing: 18) {
-            ForEach([(Tab.summary, "Resumen"), (.apps, "Apps"), (.week, "Semana")], id: \.0) { tab, title in
+            ForEach([(Tab.summary, "Resumen"), (.apps, "Apps"), (.week, "Semana"), (.achievements, "Logros")], id: \.0) { tab, title in
                 Button {
                     withAnimation(.smooth(duration: 0.25)) { store.tab = tab }
                 } label: {
                     VStack(spacing: 6) {
-                        Text(title)
+                        Group {
+                            if tab == .achievements {
+                                AchievementsTabTitle(model: store.achievements, selected: store.tab == tab)
+                            } else {
+                                Text(title)
+                            }
+                        }
                             .font(.system(size: 12, weight: store.tab == tab ? .semibold : .regular))
                             .foregroundStyle(store.tab == tab ? Color.primary : Color.secondary)
                         ZStack {
@@ -283,6 +292,7 @@ struct WidgetView: View {
             case .summary: SummaryTab(day: d, store: store).padding(16).transition(.opacity)
             case .apps: AppsTab(day: d).transition(.opacity)
             case .week: WeekTab(store: store).padding(16).transition(.opacity)
+            case .achievements: AchievementsTab(model: store.achievements).transition(.opacity)
             }
         } else {
             ProgressView().controlSize(.small).frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -841,6 +851,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         } else {
             NSApp.activate(ignoringOtherApps: true)
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+            store.achievements.popoverOpened()
             popover.contentViewController?.view.window?.makeKey()
             if store.isToday { Task { await store.refresh() } }
         }
@@ -951,6 +962,7 @@ enum Main {
         let store = Store(demo: demo)
         if week { store.tab = .week }
         if CommandLine.arguments.contains("--apps") { store.tab = .apps }
+        if CommandLine.arguments.contains("--logros") { store.tab = .achievements; store.achievements.loadDemo() }
         Task { @MainActor in
             await store.refresh()
             let view = WidgetView(store: store, snapshot: true)

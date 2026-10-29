@@ -31,6 +31,14 @@ Filmo Time lee tus datos de [DeskTime](https://desktime.com) y te los enseña si
 </tr>
 </table>
 
+### 🏆 Logros
+
+Hay **30 logros ocultos**. No sabrás cuáles son hasta que los consigas: cuando desbloqueas uno, te llega una notificación y aparece en la pestaña **Logros**. Algunos te harán sentir orgulloso. Otros, no tanto.
+
+<p align="center"><img src="docs/popover-logros.png" width="260" alt="Pestaña Logros"></p>
+
+> Los logros que dependen de un porcentaje de la jornada solo cuentan en días de **7 horas trabajadas o más**.
+
 ### Widgets
 
 <table>

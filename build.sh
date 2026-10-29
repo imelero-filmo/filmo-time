@@ -36,7 +36,7 @@ xcrun actool build/Assets.xcassets --compile "$APP/Contents/Resources" --platfor
 cp build/filmo-simbolo.png "$APP/Contents/Resources/"
 cp build/filmo-simbolo.png "$EXT/Contents/Resources/"
 
-swiftc "${FLAGS[@]}" -o "$APP/Contents/MacOS/DeskTimeWidget" App/App.swift App/Updater.swift Shared/Shared.swift
+swiftc "${FLAGS[@]}" -o "$APP/Contents/MacOS/DeskTimeWidget" App/App.swift App/Updater.swift App/Achievements.swift Shared/Shared.swift
 # Widget extensions start in NSExtensionMain, not in their own main (Xcode does the same).
 swiftc "${FLAGS[@]}" -application-extension -Xlinker -e -Xlinker _NSExtensionMain \
   -o "$EXT/Contents/MacOS/DeskTimeWidgetExtension" Widget/Widget.swift Shared/Shared.swift
