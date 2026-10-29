@@ -9,16 +9,24 @@ struct Entry: TimelineEntry {
     var day: DayData?
     var week: [WeekDay] = []
     var error: String?
+    /// Sample data with no real data to show yet: drawn as grey placeholders.
+    var redacted = false
 }
 
 struct Provider: TimelineProvider {
+    /// macOS shows this while it redraws the widget (for example when switching
+    /// desktops), so it must be the user's latest data, never the sample data.
     func placeholder(in context: Context) -> Entry {
-        Entry(date: Date(), day: Demo.day, week: Demo.week(around: Date()))
+        if let s = Snapshot.load() {
+            return Entry(date: s.fetchedAt, day: s.day, week: s.week)
+        }
+        return Entry(date: Date(), day: Demo.day, week: Demo.week(around: Date()), redacted: true)
     }
 
     func getSnapshot(in context: Context, completion: @escaping (Entry) -> Void) {
         if context.isPreview {
-            completion(placeholder(in: context))
+            // The widget gallery shows the sample data.
+            completion(Entry(date: Date(), day: Demo.day, week: Demo.week(around: Date())))
             return
         }
         Task { completion(await load()) }
@@ -85,6 +93,7 @@ struct DeskTimeContent: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
+        .redacted(reason: entry.redacted ? .placeholder : [])
         .widgetURL(entry.day?.profileURL ?? URL(string: "https://desktime.com/app/my"))
     }
 }
