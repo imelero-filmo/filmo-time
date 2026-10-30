@@ -17,11 +17,11 @@ final class Updater {
     }
 
     func start() {
-        // A little after launch, then once a day.
+        // A little after launch, then every 8 hours.
         DispatchQueue.main.asyncAfter(deadline: .now() + 15) { [weak self] in
             Task { await self?.check(userInitiated: false) }
         }
-        timer = Timer.scheduledTimer(withTimeInterval: 24 * 3600, repeats: true) { [weak self] _ in
+        timer = Timer.scheduledTimer(withTimeInterval: 8 * 3600, repeats: true) { [weak self] _ in
             Task { @MainActor in await self?.check(userInitiated: false) }
         }
     }

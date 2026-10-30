@@ -132,7 +132,7 @@ Clic derecho en el icono **F** de la barra de menús → **Configurar API key…
 <details>
 <summary><b>Cómo se actualiza</b></summary>
 
-Sola. Filmo Time comprueba una vez al día si hay una versión nueva y te pregunta si quieres instalarla: pulsa **Actualizar ahora** y se reinicia con la nueva. También puedes buscarla a mano: clic derecho en el icono **F** → **Buscar actualizaciones…** Tu API key y tus widgets se conservan.
+Sola. Filmo Time comprueba cada 8 horas si hay una versión nueva y te pregunta si quieres instalarla: pulsa **Actualizar ahora** y se reinicia con la nueva. También puedes buscarla a mano: clic derecho en el icono **F** → **Buscar actualizaciones…** Tu API key y tus widgets se conservan.
 </details>
 
 <details>
@@ -167,7 +167,7 @@ gh release create v1.1.8 dist/Filmo-Time.dmg --title "Filmo Time 1.1.8" --notes 
 ```
 
 - La etiqueta tiene que ser `v` + la misma versión (`v1.1.8`) y el archivo adjunto llamarse `Filmo-Time.dmg`.
-- Las apps instaladas lo detectan solas (una vez al día) y ofrecen actualizar. Solo instalan versiones firmadas por el mismo certificado.
+- Las apps instaladas lo detectan solas (cada 8 horas) y ofrecen actualizar. Solo instalan versiones firmadas por el mismo certificado.
 - El enlace de descarga del README apunta siempre a la última release.
 
 | Carpeta | Contenido |
