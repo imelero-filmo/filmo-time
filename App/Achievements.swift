@@ -330,6 +330,7 @@ final class Achievements: ObservableObject {
     private var previousToday: DayData?
     /// Day `previousToday` was fetched on; yesterday's data must never be judged as today's.
     private var previousTodayDay = ""
+    private var previousWeek: [WeekDay] = []
     private static let url = KeyStore.fileURL.deletingLastPathComponent().appendingPathComponent("achievements.json")
 
     init(persist: Bool) {
@@ -369,7 +370,7 @@ final class Achievements: ObservableObject {
         if state.opensDay != today { state.opensDay = today; state.opens = 0 }
         state.opens += 1
         save()
-        if let t = previousToday, previousTodayDay == today { evaluate(today: t, week: []) }
+        if let t = previousToday, previousTodayDay == today { evaluate(today: t, week: previousWeek) }
     }
 
     /// Called with today's data on every refresh.
@@ -386,6 +387,7 @@ final class Achievements: ObservableObject {
             isFirstDay: state.firstDay == Fmt.ymd(Date()))
         previousToday = today
         previousTodayDay = Fmt.ymd(Date())
+        previousWeek = week
         lastContext = ctx
         unlock(allAchievements.filter { state.unlocked[$0.id] == nil && $0.check(ctx) })
     }
