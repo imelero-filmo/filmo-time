@@ -18,7 +18,7 @@ macOS 14 o posterior · Mac con Apple Silicon · Gratis
 
 Filmo Time lee tus datos de [DeskTime](https://desktime.com) y te los enseña sin abrir el navegador:
 
-- **En la barra de menús:** el tiempo que llevas trabajado hoy y cuánto de él ha sido productivo. Un clic abre el resumen.
+- **En la barra de menús:** el tiempo que llevas trabajado hoy y cuánto de él ha sido productivo. Un clic abre el resumen. Cuando DeskTime deja de contar porque llevas un rato sin actividad, la F se convierte en un símbolo de pausa y verás tu tiempo inactivo.
 - **En el escritorio:** un widget en cuatro tamaños que se actualiza solo.
 
 <p align="center"><img src="docs/barra-de-menus.png" width="640" alt="Filmo Time en la barra de menús"><br><sub>Siempre visible en la barra de menús</sub></p>
@@ -111,6 +111,8 @@ Clic derecho en el icono **F** de la barra de menús → activa **Abrir al inici
 | **Productividad** | Qué parte de tu tiempo frente al ordenador fue productiva. |
 | **Eficacia** | Tu tiempo productivo comparado con tu jornada objetivo. Llega al 100 % al completar la jornada. |
 | **Llegada** | Primera actividad del día. En rojo si es después del inicio de tu jornada. |
+| **En el trabajo** | Desde tu primera actividad del día hasta la última. Es el tiempo trabajado más el inactivo. |
+| **Inactivo** | Tiempo en el trabajo que DeskTime no contó: comida, descansos, reuniones fuera del ordenador y ratos sin actividad. |
 | **Jornada** | Tu horario y cuánto queda. |
 
 ---
@@ -162,11 +164,11 @@ Compilar requiere Xcode (o sus herramientas de línea de comandos) y un certific
 ### Publicar una versión
 
 ```bash
-VERSION=1.1.9 ./build.sh --dmg
-gh release create v1.1.9 dist/Filmo-Time.dmg --title "Filmo Time 1.1.9" --notes "Qué cambia"
+VERSION=1.1.10 ./build.sh --dmg
+gh release create v1.1.10 dist/Filmo-Time.dmg --title "Filmo Time 1.1.10" --notes "Qué cambia"
 ```
 
-- La etiqueta tiene que ser `v` + la misma versión (`v1.1.9`) y el archivo adjunto llamarse `Filmo-Time.dmg`.
+- La etiqueta tiene que ser `v` + la misma versión (`v1.1.10`) y el archivo adjunto llamarse `Filmo-Time.dmg`.
 - Las apps instaladas lo detectan solas (cada 8 horas) y ofrecen actualizar. Solo instalan versiones firmadas por el mismo certificado.
 - El enlace de descarga del README apunta siempre a la última release.
 
