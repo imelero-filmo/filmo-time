@@ -77,6 +77,8 @@ struct DayData {
     var name = ""
     var isOnline = false
     var arrived: String?   // "HH:mm"
+    /// "yyyy-MM-dd" of the arrival, to tell which day the data belongs to.
+    var arrivedDay: String?
     var left: String?
     var late = false
     var productive: Double = 0
@@ -106,6 +108,7 @@ struct DayData {
         d.name = j["name"] as? String ?? ""
         d.isOnline = bool(j["isOnline"])
         d.arrived = hhmm(j["arrived"])
+        d.arrivedDay = (j["arrived"] as? String).map { String($0.prefix(10)) }
         d.left = hhmm(j["left"])
         d.late = bool(j["late"])
         d.productive = num(j["productiveTime"])

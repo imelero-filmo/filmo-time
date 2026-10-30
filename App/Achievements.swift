@@ -23,6 +23,7 @@ struct AchievementContext {
     /// 1 = Sunday ... 7 = Saturday.
     var weekday: Int { calendar.component(.weekday, from: now) }
     var worked: Double { today.worked }
+    var arrivedToday: Bool { today.arrivedDay == Fmt.ymd(now) }
 
     /// Share of the worked time spent in apps matching `keys`.
     func share(_ keys: [String]) -> Double {
@@ -91,7 +92,7 @@ let allAchievements: [Achievement] = [
     // Schedule
     Achievement(id: "madrugador", emoji: "🐓", title: "Madrugador",
                 detail: "Empezaste antes de las 7:00. ¿Has dormido?") {
-        !$0.isFirstDay && (minutes($0.today.arrived) ?? 9999) < 7 * 60
+        !$0.isFirstDay && $0.arrivedToday && (minutes($0.today.arrived) ?? 9999) < 7 * 60
     },
     Achievement(id: "buho", emoji: "🦉", title: "Búho nocturno",
                 detail: "En línea pasadas las 23:00. El código compila mejor de noche, dicen.") {
@@ -99,12 +100,12 @@ let allAchievements: [Achievement] = [
     },
     Achievement(id: "entrada-triunfal", emoji: "🐌", title: "Entrada triunfal",
                 detail: "Llegaste tres horas tarde o más. Lo importante es llegar.") {
-        guard !$0.isFirstDay, let a = minutes($0.today.arrived), let s = minutes($0.today.workStarts) else { return false }
+        guard !$0.isFirstDay, $0.arrivedToday, let a = minutes($0.today.arrived), let s = minutes($0.today.workStarts) else { return false }
         return a - s >= 180
     },
     Achievement(id: "suizo", emoji: "⌚", title: "Puntualidad suiza",
                 detail: "Empezaste a tu hora exacta, al minuto. Inquietante.") {
-        guard !$0.isFirstDay, let a = minutes($0.today.arrived), let s = minutes($0.today.workStarts) else { return false }
+        guard !$0.isFirstDay, $0.arrivedToday, let a = minutes($0.today.arrived), let s = minutes($0.today.workStarts) else { return false }
         return a == s
     },
     Achievement(id: "sin-casa", emoji: "🧟", title: "¿Tienes casa?",
@@ -319,6 +320,7 @@ final class Achievements: ObservableObject {
         var opensDay = ""
         var opens = 0
         var firstDay: String?
+        var migration: Int?
     }
 
     @Published private(set) var state = State()
@@ -326,6 +328,8 @@ final class Achievements: ObservableObject {
     @Published private(set) var lastContext: AchievementContext?
     private let persist: Bool
     private var previousToday: DayData?
+    /// Day `previousToday` was fetched on; yesterday's data must never be judged as today's.
+    private var previousTodayDay = ""
     private static let url = KeyStore.fileURL.deletingLastPathComponent().appendingPathComponent("achievements.json")
 
     init(persist: Bool) {
@@ -333,6 +337,22 @@ final class Achievements: ObservableObject {
         if persist, let data = try? Data(contentsOf: Self.url),
            let s = try? JSONDecoder().decode(State.self, from: data) {
             state = s
+        }
+        migrate()
+    }
+
+    /// One-off fixes to saved progress, applied once per install.
+    private func migrate() {
+        guard persist else { return }
+        if (state.migration ?? 0) < 1 {
+            // 1.1.5 and earlier judged yesterday's arrival as today's when the summary
+            // was opened before the first refresh; arrival unlocks may be wrong.
+            for id in ["entrada-triunfal", "madrugador", "suizo"] {
+                state.unlocked[id] = nil
+                state.seen.remove(id)
+            }
+            state.migration = 1
+            save()
         }
     }
 
@@ -349,7 +369,7 @@ final class Achievements: ObservableObject {
         if state.opensDay != today { state.opensDay = today; state.opens = 0 }
         state.opens += 1
         save()
-        if let t = previousToday { evaluate(today: t, week: []) }
+        if let t = previousToday, previousTodayDay == today { evaluate(today: t, week: []) }
     }
 
     /// Called with today's data on every refresh.
@@ -365,6 +385,7 @@ final class Achievements: ObservableObject {
             popoverOpensToday: state.opensDay == Fmt.ymd(Date()) ? state.opens : 0,
             isFirstDay: state.firstDay == Fmt.ymd(Date()))
         previousToday = today
+        previousTodayDay = Fmt.ymd(Date())
         lastContext = ctx
         unlock(allAchievements.filter { state.unlocked[$0.id] == nil && $0.check(ctx) })
     }
