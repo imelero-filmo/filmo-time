@@ -184,7 +184,7 @@ let allAchievements: [Achievement] = [
                 detail: "Más de una hora en Amazon en horario laboral. Era material de oficina.") {
         $0.today.seconds(matching: AppKeys.amazon) > hour
     },
-    Achievement(id: "turista", emoji: "🧭", title: "Turista digital",
+    Achievement(id: "turista", emoji: "🧭", title: "TDAH",
                 detail: "60 apps o webs distintas en un día. Concentración nivel ardilla.") {
         $0.today.apps.count >= 60
     },
