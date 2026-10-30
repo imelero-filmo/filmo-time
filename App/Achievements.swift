@@ -51,6 +51,10 @@ private let fullDay: Double = 7 * hour
 enum AppKeys {
     static let claude = ["claude"]
     static let chatGPT = ["chatgpt", "chat.openai.com", "openai"]
+    /// Claude and the other AI assistants and coding harnesses.
+    static let ai = claude + chatGPT + ["claude.ai", "chatgpt.com", "opencode", "codex", "cursor", "windsurf",
+                                        "copilot", "gemini", "perplexity", "deepseek", "grok", "mistral",
+                                        "aider", "cline", "goose", "ollama", "lm studio", "lmstudio"]
     static let social = ["twitter", "x.com", "instagram", "facebook", "linkedin", "tiktok", "reddit",
                          "threads.net", "bsky.app", "mastodon"]
     static let mail = ["mail", "outlook", "spark", "superhuman"]
@@ -75,14 +79,14 @@ enum AppKeys {
 let allAchievements: [Achievement] = [
     // Yours
     Achievement(id: "ai-addict", emoji: "🤖", title: "AI addict",
-                detail: "Más del 80 % de una jornada completa en Claude. ¿Quién trabaja para quién?") {
-        $0.worked >= fullDay && $0.share(AppKeys.claude) > 0.8
+                detail: "Más del 80 % de una jornada completa en Claude (o similar). ¿Quién trabaja para quién?") {
+        $0.worked >= fullDay && $0.share(AppKeys.ai) > 0.8
     },
     Achievement(id: "aguafiestas", emoji: "🍺", title: "Aguafiestas…",
-                detail: "Usaste Claude un primer viernes de mes después de las 19:00. Las cervezas no se beben solas.") { c in
+                detail: "Usaste Claude (o similar) un primer viernes de mes después de las 19:00. Las cervezas no se beben solas.") { c in
         let firstFriday = c.weekday == 6 && c.calendar.component(.day, from: c.now) <= 7
         guard firstFriday, c.hour >= 19, let prev = c.previous else { return false }
-        return c.today.seconds(matching: AppKeys.claude) > prev.seconds(matching: AppKeys.claude)
+        return c.today.seconds(matching: AppKeys.ai) > prev.seconds(matching: AppKeys.ai)
     },
     Achievement(id: "community-manager", emoji: "📱", title: "Community manager",
                 detail: "Más de la mitad de una jornada completa en redes sociales. Seguro que era networking.") {
@@ -203,17 +207,17 @@ let allAchievements: [Achievement] = [
         return c.today.seconds(matching: AppKeys.presentations) > prev.seconds(matching: AppKeys.presentations)
     },
     Achievement(id: "en-serio", emoji: "🥂", title: "¿En serio?",
-                detail: "Abriste Claude en Nochevieja, entre las 23:00 y la 1:00. Las uvas no se comen solas.") { c in
+                detail: "Abriste Claude (o similar) en Nochevieja, entre las 23:00 y la 1:00. Las uvas no se comen solas.") { c in
         guard isNewYearsEve(c.now, c.calendar), let prev = c.previous else { return false }
-        return c.today.seconds(matching: AppKeys.claude) > prev.seconds(matching: AppKeys.claude)
+        return c.today.seconds(matching: AppKeys.ai) > prev.seconds(matching: AppKeys.ai)
     },
     Achievement(id: "truco-o-tokens", emoji: "🎃", title: "¿Truco o tokens?",
-                detail: "Abriste Claude el día de Halloween. Hoy se piden caramelos, no prompts.") { c in
-        isHalloween(c.now, c.calendar) && c.today.seconds(matching: AppKeys.claude) > 0
+                detail: "Abriste Claude (o similar) el día de Halloween. Hoy se piden caramelos, no prompts.") { c in
+        isHalloween(c.now, c.calendar) && c.today.seconds(matching: AppKeys.ai) > 0
     },
     Achievement(id: "santa-claude", emoji: "🎅", title: "Santa Claude",
-                detail: "Abriste Claude el día de Navidad. Ni los elfos trabajan hoy.") { c in
-        isChristmas(c.now, c.calendar) && c.today.seconds(matching: AppKeys.claude) > 0
+                detail: "Abriste Claude (o similar) el día de Navidad. Ni los elfos trabajan hoy.") { c in
+        isChristmas(c.now, c.calendar) && c.today.seconds(matching: AppKeys.ai) > 0
     },
     Achievement(id: "plagiador", emoji: "🕵️", title: "Plagiador",
                 detail: "Más de 10 minutos en webs de la competencia en un día. Lo llamaremos benchmarking.") {
@@ -309,10 +313,10 @@ struct LiveEvent {
 /// reports the app switch, instead of waiting for DeskTime's next numbers.
 let liveTriggers: [String: (LiveEvent) -> Bool] = [
     "weekly": { $0.weekday == 2 && (9 * 60..<11 * 60).contains($0.minuteOfDay) && $0.appMatches(AppKeys.presentations) },
-    "aguafiestas": { $0.isFirstFridayOfMonth && $0.minuteOfDay >= 19 * 60 && $0.appMatches(AppKeys.claude) },
-    "en-serio": { isNewYearsEve($0.now, $0.calendar) && $0.appMatches(AppKeys.claude) },
-    "truco-o-tokens": { isHalloween($0.now, $0.calendar) && $0.appMatches(AppKeys.claude) },
-    "santa-claude": { isChristmas($0.now, $0.calendar) && $0.appMatches(AppKeys.claude) },
+    "aguafiestas": { $0.isFirstFridayOfMonth && $0.minuteOfDay >= 19 * 60 && $0.appMatches(AppKeys.ai) },
+    "en-serio": { isNewYearsEve($0.now, $0.calendar) && $0.appMatches(AppKeys.ai) },
+    "truco-o-tokens": { isHalloween($0.now, $0.calendar) && $0.appMatches(AppKeys.ai) },
+    "santa-claude": { isChristmas($0.now, $0.calendar) && $0.appMatches(AppKeys.ai) },
     "buho": { $0.minuteOfDay >= 23 * 60 },
     "madrugador": { (5 * 60..<7 * 60).contains($0.minuteOfDay) },
 ]
