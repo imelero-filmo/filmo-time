@@ -33,7 +33,7 @@ Filmo Time lee tus datos de [DeskTime](https://desktime.com) y te los enseña si
 
 ### 🏆 Logros
 
-Hay **34 logros**: unos visibles, con su progreso, y otros ocultos hasta que los consigas. Cada vez que desbloqueas uno, te llega una notificación.
+Hay **35 logros**: unos visibles, con su progreso, y otros ocultos hasta que los consigas. Cada vez que desbloqueas uno, te llega una notificación.
 
 <p align="center"><img src="docs/logros.png" width="260" alt="Pestaña Logros"></p>
 

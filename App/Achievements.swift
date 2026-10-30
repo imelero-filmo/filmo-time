@@ -203,6 +203,10 @@ let allAchievements: [Achievement] = [
         guard isNewYearsEve(c.now, c.calendar), let prev = c.previous else { return false }
         return c.today.seconds(matching: AppKeys.claude) > prev.seconds(matching: AppKeys.claude)
     },
+    Achievement(id: "truco-o-tokens", emoji: "🎃", title: "¿Truco o tokens?",
+                detail: "Abriste Claude el día de Halloween. Hoy se piden caramelos, no prompts.") { c in
+        isHalloween(c.now, c.calendar) && c.today.seconds(matching: AppKeys.claude) > 0
+    },
     Achievement(id: "santa-claude", emoji: "🎅", title: "Santa Claude",
                 detail: "Abriste Claude el día de Navidad. Ni los elfos trabajan hoy.") { c in
         isChristmas(c.now, c.calendar) && c.today.seconds(matching: AppKeys.claude) > 0
@@ -303,10 +307,16 @@ let liveTriggers: [String: (LiveEvent) -> Bool] = [
     "weekly": { $0.weekday == 2 && (9 * 60..<11 * 60).contains($0.minuteOfDay) && $0.appMatches(AppKeys.presentations) },
     "aguafiestas": { $0.isFirstFridayOfMonth && $0.minuteOfDay >= 19 * 60 && $0.appMatches(AppKeys.claude) },
     "en-serio": { isNewYearsEve($0.now, $0.calendar) && $0.appMatches(AppKeys.claude) },
+    "truco-o-tokens": { isHalloween($0.now, $0.calendar) && $0.appMatches(AppKeys.claude) },
     "santa-claude": { isChristmas($0.now, $0.calendar) && $0.appMatches(AppKeys.claude) },
     "buho": { $0.minuteOfDay >= 23 * 60 },
     "madrugador": { (5 * 60..<7 * 60).contains($0.minuteOfDay) },
 ]
+
+func isHalloween(_ date: Date, _ calendar: Calendar) -> Bool {
+    let d = calendar.dateComponents([.month, .day], from: date)
+    return d.month == 10 && d.day == 31
+}
 
 func isChristmas(_ date: Date, _ calendar: Calendar) -> Bool {
     let d = calendar.dateComponents([.month, .day], from: date)
