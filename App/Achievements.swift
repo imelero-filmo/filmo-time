@@ -198,6 +198,15 @@ let allAchievements: [Achievement] = [
         guard c.weekday == 2, (9 * 60..<11 * 60).contains(c.minuteOfDay), let prev = c.previous else { return false }
         return c.today.seconds(matching: AppKeys.presentations) > prev.seconds(matching: AppKeys.presentations)
     },
+    Achievement(id: "en-serio", emoji: "🎃", title: "¿En serio?",
+                detail: "Abriste Claude la noche de Halloween, entre las 23:00 y la 1:00. Había fiestas mejores.") { c in
+        guard isHalloweenNight(c.now, c.calendar), let prev = c.previous else { return false }
+        return c.today.seconds(matching: AppKeys.claude) > prev.seconds(matching: AppKeys.claude)
+    },
+    Achievement(id: "santa-claude", emoji: "🎅", title: "Santa Claude",
+                detail: "Abriste Claude el día de Navidad. Ni los elfos trabajan hoy.") { c in
+        isChristmas(c.now, c.calendar) && c.today.seconds(matching: AppKeys.claude) > 0
+    },
     Achievement(id: "plagiador", emoji: "🕵️", title: "Plagiador",
                 detail: "Más de 10 minutos en webs de la competencia en un día. Lo llamaremos benchmarking.") {
         $0.today.seconds(matching: AppKeys.competitors) > 10 * 60
@@ -293,9 +302,22 @@ struct LiveEvent {
 let liveTriggers: [String: (LiveEvent) -> Bool] = [
     "weekly": { $0.weekday == 2 && (9 * 60..<11 * 60).contains($0.minuteOfDay) && $0.appMatches(AppKeys.presentations) },
     "aguafiestas": { $0.isFirstFridayOfMonth && $0.minuteOfDay >= 19 * 60 && $0.appMatches(AppKeys.claude) },
+    "en-serio": { isHalloweenNight($0.now, $0.calendar) && $0.appMatches(AppKeys.claude) },
+    "santa-claude": { isChristmas($0.now, $0.calendar) && $0.appMatches(AppKeys.claude) },
     "buho": { $0.minuteOfDay >= 23 * 60 },
     "madrugador": { (5 * 60..<7 * 60).contains($0.minuteOfDay) },
 ]
+
+func isChristmas(_ date: Date, _ calendar: Calendar) -> Bool {
+    let d = calendar.dateComponents([.month, .day], from: date)
+    return d.month == 12 && d.day == 25
+}
+
+/// 31 October from 23:00 to 1 November at 1:00.
+func isHalloweenNight(_ date: Date, _ calendar: Calendar) -> Bool {
+    let d = calendar.dateComponents([.month, .day, .hour], from: date)
+    return (d.month == 10 && d.day == 31 && d.hour == 23) || (d.month == 11 && d.day == 1 && d.hour == 0)
+}
 
 extension DayData {
     /// Seconds in apps whose name matches any key. Keys with a dot are domains
@@ -382,7 +404,7 @@ final class Achievements: ObservableObject {
 
         if state.firstDay == nil { state.firstDay = Fmt.ymd(Date()) }
         let ctx = AchievementContext(
-            today: today, previous: previousToday, now: Date(), week: week, history: state.history,
+            today: today, previous: previousTodayDay == Fmt.ymd(Date()) ? previousToday : nil, now: Date(), week: week, history: state.history,
             popoverOpensToday: state.opensDay == Fmt.ymd(Date()) ? state.opens : 0,
             isFirstDay: state.firstDay == Fmt.ymd(Date()))
         previousToday = today
@@ -598,6 +620,8 @@ struct AchievementRow: View {
         .padding(.horizontal, 6).padding(.vertical, 6)
         .background(RoundedRectangle(cornerRadius: 8, style: .continuous)
             .fill(Color.primary.opacity(isNew ? 0.06 : 0)))
+        .contentShape(Rectangle())
+        .help(achievement.detail)
     }
 }
 
