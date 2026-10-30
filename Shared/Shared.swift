@@ -98,9 +98,10 @@ struct DayData {
 
     /// Time worked: everything DeskTime tracked on the computer, whatever the app.
     var worked: Double { desktime }
-    /// Worked time that was not productive, split by the app categories.
-    var unproductiveTime: Double { min(total(.unproductive), max(desktime - productive, 0)) }
-    var neutralTime: Double { max(desktime - productive - unproductiveTime, 0) }
+    /// Worked time by app category. Taken from the apps themselves, which add up to
+    /// the worked time; without app data, what is not productive counts as neutral.
+    var unproductiveTime: Double { apps.isEmpty ? 0 : total(.unproductive) }
+    var neutralTime: Double { apps.isEmpty ? max(desktime - productive, 0) : total(.neutral) }
     func total(_ kind: AppKind) -> Double { apps(kind).reduce(0) { $0 + $1.seconds } }
 
     static func parse(_ j: [String: Any]) -> DayData {
@@ -135,6 +136,15 @@ struct DayData {
                 }
             }
             d.apps.sort { $0.seconds > $1.seconds }
+            // DeskTime's overall productive time lags behind its per-app figures
+            // (it can read 0 while apps already show minutes). Use the apps, so the
+            // productive / neutral / unproductive split always adds up to the total.
+            let appProductive = d.total(.productive)
+            if appProductive > 0, abs(appProductive - d.productive) >= 60 {
+                if d.productive > 0 { d.efficiency *= appProductive / d.productive }
+                d.productive = appProductive
+                if d.desktime > 0 { d.productivity = appProductive / d.desktime * 100 }
+            }
         }
         if let ps = j["projects"] as? [[String: Any]] {
             d.projects = ps.compactMap(project).sorted { $0.seconds > $1.seconds }
