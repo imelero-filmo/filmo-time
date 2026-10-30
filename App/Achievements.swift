@@ -198,9 +198,9 @@ let allAchievements: [Achievement] = [
         guard c.weekday == 2, (9 * 60..<11 * 60).contains(c.minuteOfDay), let prev = c.previous else { return false }
         return c.today.seconds(matching: AppKeys.presentations) > prev.seconds(matching: AppKeys.presentations)
     },
-    Achievement(id: "en-serio", emoji: "🎃", title: "¿En serio?",
-                detail: "Abriste Claude la noche de Halloween, entre las 23:00 y la 1:00. Había fiestas mejores.") { c in
-        guard isHalloweenNight(c.now, c.calendar), let prev = c.previous else { return false }
+    Achievement(id: "en-serio", emoji: "🥂", title: "¿En serio?",
+                detail: "Abriste Claude en Nochevieja, entre las 23:00 y la 1:00. Las uvas no se comen solas.") { c in
+        guard isNewYearsEve(c.now, c.calendar), let prev = c.previous else { return false }
         return c.today.seconds(matching: AppKeys.claude) > prev.seconds(matching: AppKeys.claude)
     },
     Achievement(id: "santa-claude", emoji: "🎅", title: "Santa Claude",
@@ -302,7 +302,7 @@ struct LiveEvent {
 let liveTriggers: [String: (LiveEvent) -> Bool] = [
     "weekly": { $0.weekday == 2 && (9 * 60..<11 * 60).contains($0.minuteOfDay) && $0.appMatches(AppKeys.presentations) },
     "aguafiestas": { $0.isFirstFridayOfMonth && $0.minuteOfDay >= 19 * 60 && $0.appMatches(AppKeys.claude) },
-    "en-serio": { isHalloweenNight($0.now, $0.calendar) && $0.appMatches(AppKeys.claude) },
+    "en-serio": { isNewYearsEve($0.now, $0.calendar) && $0.appMatches(AppKeys.claude) },
     "santa-claude": { isChristmas($0.now, $0.calendar) && $0.appMatches(AppKeys.claude) },
     "buho": { $0.minuteOfDay >= 23 * 60 },
     "madrugador": { (5 * 60..<7 * 60).contains($0.minuteOfDay) },
@@ -313,10 +313,10 @@ func isChristmas(_ date: Date, _ calendar: Calendar) -> Bool {
     return d.month == 12 && d.day == 25
 }
 
-/// 31 October from 23:00 to 1 November at 1:00.
-func isHalloweenNight(_ date: Date, _ calendar: Calendar) -> Bool {
+/// 31 December from 23:00 to 1 January at 1:00.
+func isNewYearsEve(_ date: Date, _ calendar: Calendar) -> Bool {
     let d = calendar.dateComponents([.month, .day, .hour], from: date)
-    return (d.month == 10 && d.day == 31 && d.hour == 23) || (d.month == 11 && d.day == 1 && d.hour == 0)
+    return (d.month == 12 && d.day == 31 && d.hour == 23) || (d.month == 1 && d.day == 1 && d.hour == 0)
 }
 
 extension DayData {
