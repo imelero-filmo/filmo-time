@@ -779,7 +779,7 @@ struct SettingsView: View {
 /// Lives in the menu bar: left click opens the summary in a popover,
 /// right click shows the app menu.
 @MainActor
-final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSPopoverDelegate {
     let store: Store
     let updater = Updater()
     private var statusItem: NSStatusItem!
@@ -815,6 +815,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         host.sizingOptions = .preferredContentSize
         popover.contentViewController = host
         popover.behavior = .transient
+        popover.delegate = self
         popover.animates = true
     }
 
@@ -941,7 +942,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     func windowWillClose(_ notification: Notification) {
-        if (notification.object as? NSWindow) === settingsWindow { settingsWindow = nil }
+        if (notification.object as? NSWindow) === settingsWindow {
+            settingsWindow = nil
+            NSApp.deactivate()
+        }
+    }
+
+    /// Hands focus back to the previous app; while this app stays active the
+    /// system keeps an auto-hiding menu bar on screen.
+    func popoverDidClose(_ notification: Notification) {
+        if settingsWindow == nil { NSApp.deactivate() }
     }
 }
 
