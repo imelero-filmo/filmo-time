@@ -101,8 +101,13 @@ struct DayData {
     /// Worked time by app category. Taken from the apps themselves, which add up to
     /// the worked time; without app data, what is not productive counts as neutral.
     var unproductiveTime: Double { apps.isEmpty ? 0 : total(.unproductive) }
-    var neutralTime: Double { apps.isEmpty ? max(desktime - productive, 0) : total(.neutral) }
+    /// Whatever is left of the worked time, in the whole minutes shown on screen,
+    /// so the three parts always add up to the total.
+    var neutralTime: Double { max(wholeMinutes(desktime) - wholeMinutes(productive) - wholeMinutes(unproductiveTime), 0) }
     func total(_ kind: AppKind) -> Double { apps(kind).reduce(0) { $0 + $1.seconds } }
+    /// Time at work DeskTime did not count: breaks, idle stretches, pauses.
+    /// In whole minutes, so worked + inactive matches the time at work shown.
+    var inactive: Double { max(wholeMinutes(atWork) - wholeMinutes(desktime), 0) }
 
     static func parse(_ j: [String: Any]) -> DayData {
         var d = DayData()
@@ -191,6 +196,9 @@ func hhmm(_ v: Any?) -> String? {
     guard let s = v as? String, s.count >= 16 else { return nil }
     return String(s.dropFirst(11).prefix(5))
 }
+
+/// Durations show whole minutes, cut down; parts derived from them use the same cut.
+func wholeMinutes(_ seconds: Double) -> Double { (seconds / 60).rounded(.down) * 60 }
 
 func minutes(_ hhmm: String?) -> Double? {
     guard let parts = hhmm?.split(separator: ":"), parts.count >= 2,

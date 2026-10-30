@@ -21,11 +21,14 @@ final class Store: ObservableObject {
     @Published var error: String?
     @Published var lastUpdate: Date?
     @Published var hasKey = KeyStore.read() != nil
+    /// Seconds since the last keyboard or mouse input; reading it needs no permission.
+    @Published var idle: Double = 0
 
     let demo: Bool
     let achievements: Achievements
     var onChange: (() -> Void)?
     private var timer: Timer?
+    private var idleTimer: Timer?
     /// Keeps App Nap from stretching the timer of this window-less app.
     private var activity: NSObjectProtocol?
     /// Past days of the week never change, so each is fetched only once.
@@ -47,6 +50,9 @@ final class Store: ObservableObject {
         // One rhythm for everything: menu bar, popover and widget.
         timer = Timer.scheduledTimer(withTimeInterval: 300, repeats: true) { [weak self] _ in
             Task { @MainActor in await self?.refresh() }
+        }
+        idleTimer = Timer.scheduledTimer(withTimeInterval: 10, repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.pollIdle() }
         }
         NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didWakeNotification, object: nil, queue: .main
@@ -146,8 +152,36 @@ final class Store: ObservableObject {
 
     var menuBarTitle: String {
         guard let d = today else { return hasKey ? "…" : AppInfo.name }
+        if paused { return "\(Fmt.duration(d.worked)) · \(Fmt.duration(inactiveToday)) inactivo" }
         return "\(Fmt.duration(d.worked)) · \(Fmt.duration(d.productive)) prod."
     }
+
+    /// Roughly when DeskTime stops counting a computer nobody is using.
+    static let idleThreshold: Double = 3 * 60
+
+    private func pollIdle() {
+        let wasPaused = paused
+        idle = CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: CGEventType(rawValue: ~0)!)
+        if paused != wasPaused || paused { onChange?() }
+    }
+
+    /// DeskTime is not counting right now: no input for a while, or it reports being offline.
+    var paused: Bool {
+        guard !demo, let t = today, t.arrived != nil else { return false }
+        return idle >= Self.idleThreshold || !t.isOnline
+    }
+
+    /// The idle stretch going on now that DeskTime's figures, which only run to its
+    /// last update, do not include yet.
+    var ongoingIdle: Double {
+        guard let t = today, idle >= Self.idleThreshold else { return 0 }
+        let c = Calendar.current.dateComponents([.hour, .minute], from: Date())
+        let now = Double(c.hour! * 60 + c.minute!)
+        let sinceUpdate = max(now - (minutes(t.left) ?? now), 0) * 60
+        return wholeMinutes(min(idle, sinceUpdate))
+    }
+
+    var inactiveToday: Double { (today?.inactive ?? 0) + ongoingIdle }
 }
 
 // MARK: - Views
@@ -360,6 +394,8 @@ struct Label2: View {
             .font(.system(size: 9, weight: .semibold))
             .tracking(0.6)
             .foregroundStyle(.secondary)
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
     }
 }
 
@@ -439,10 +475,13 @@ struct SummaryTab: View {
                 .help("Todo el tiempo con actividad en el ordenador, según el tipo de app")
 
             let online = day.isOnline && store.isToday
+            let paused = store.paused && store.isToday
             HStack(spacing: 8) {
                 Stat(title: "Llegada", value: day.arrived ?? "—", color: day.late ? Theme.red : .primary)
-                Stat(title: "Salida", value: online ? "En línea" : (day.left ?? "—"))
-                Stat(title: "En el trabajo", value: Fmt.duration(day.atWork))
+                Stat(title: "Salida", value: paused ? "En pausa" : online ? "En línea" : (day.left ?? "—"))
+                Stat(title: "En el trabajo", value: Fmt.duration(day.atWork + (store.isToday ? store.ongoingIdle : 0)))
+                Stat(title: "Inactivo", value: Fmt.duration(store.isToday ? store.inactiveToday : day.inactive))
+                    .help("Tiempo en el trabajo que DeskTime no contó: pausas, descansos y ratos sin actividad")
             }
 
             if let s = minutes(day.workStarts), let e = minutes(day.workEnds), e > s {
@@ -822,9 +861,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSPo
     private func buildStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let b = statusItem.button {
-            let icon = AppInfo.symbol?.copy() as? NSImage
-            icon?.size = NSSize(width: 15, height: 16)
-            b.image = icon ?? NSImage(systemSymbolName: "chart.bar.fill", accessibilityDescription: AppInfo.name)
+            b.image = StatusIcon.image(phase: 0)
             b.imagePosition = .imageLeading
             b.font = .monospacedDigitSystemFont(ofSize: 12, weight: .medium)
             b.target = self
@@ -836,6 +873,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSPo
 
     private func updateStatusItem() {
         statusItem?.button?.title = " " + store.menuBarTitle
+        statusItem?.button?.toolTip = store.paused ? "DeskTime en pausa" : nil
+        setIcon(paused: store.paused)
+    }
+
+    private var iconPhase: CGFloat = 0
+    private var iconPaused = false
+    private var iconTimer: Timer?
+
+    /// Morphs the bars of the F into a pause sign and back.
+    private func setIcon(paused: Bool) {
+        guard paused != iconPaused else { return }
+        iconPaused = paused
+        iconTimer?.invalidate()
+        let from = iconPhase, to: CGFloat = paused ? 1 : 0, start = Date()
+        iconTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60, repeats: true) { [weak self] t in
+            MainActor.assumeIsolated {
+                guard let self else { return t.invalidate() }
+                let p = min(CGFloat(Date().timeIntervalSince(start) / 0.4), 1)
+                let eased = p < 0.5 ? 2 * p * p : 1 - pow(2 - 2 * p, 2) / 2
+                self.iconPhase = from + (to - from) * eased
+                self.statusItem.button?.image = StatusIcon.image(phase: self.iconPhase)
+                if p >= 1 { t.invalidate(); self.iconTimer = nil }
+            }
+        }
     }
 
     @objc private func statusClicked() {
@@ -1000,5 +1061,69 @@ enum Main {
             exit(0)
         }
         RunLoop.main.run()
+    }
+}
+
+// MARK: - Menu bar icon
+
+/// The Filmo F in the menu bar, and the pause sign its three bars become while
+/// DeskTime is not counting. Coordinates follow filmo-simbolo.svg (80 × 84).
+enum StatusIcon {
+    typealias Quad = [CGPoint]
+
+    private static let f: [Quad] = [
+        [CGPoint(x: 0, y: 0), CGPoint(x: 80, y: 0), CGPoint(x: 72, y: 26), CGPoint(x: 0, y: 26)],
+        [CGPoint(x: 0, y: 29), CGPoint(x: 58, y: 29), CGPoint(x: 50, y: 55), CGPoint(x: 0, y: 55)],
+        [CGPoint(x: 0, y: 58), CGPoint(x: 30, y: 58), CGPoint(x: 22, y: 84), CGPoint(x: 0, y: 84)],
+    ]
+    /// The F with its bars cut short.
+    private static let stub: [Quad] = [
+        [CGPoint(x: 0, y: 0), CGPoint(x: 34, y: 0), CGPoint(x: 26, y: 26), CGPoint(x: 0, y: 26)],
+        [CGPoint(x: 0, y: 29), CGPoint(x: 34, y: 29), CGPoint(x: 26, y: 55), CGPoint(x: 0, y: 55)],
+        [CGPoint(x: 0, y: 58), CGPoint(x: 34, y: 58), CGPoint(x: 26, y: 84), CGPoint(x: 0, y: 84)],
+    ]
+    /// The stubs in place along the pause bars: top and bottom on the left, the middle on the right.
+    private static let placed: [Quad] = [
+        [CGPoint(x: 14, y: 0), CGPoint(x: 40, y: 0), CGPoint(x: 35.7, y: 26), CGPoint(x: 9.7, y: 26)],
+        [CGPoint(x: 49.2, y: 29), CGPoint(x: 75.2, y: 29), CGPoint(x: 70.8, y: 55), CGPoint(x: 44.8, y: 55)],
+        [CGPoint(x: 4.3, y: 58), CGPoint(x: 30.3, y: 58), CGPoint(x: 26, y: 84), CGPoint(x: 0, y: 84)],
+    ]
+    /// Two slanted bars; the top and bottom stubs stretch into the left one.
+    private static let pause: [Quad] = {
+        let left = [CGPoint(x: 14, y: 0), CGPoint(x: 40, y: 0), CGPoint(x: 26, y: 84), CGPoint(x: 0, y: 84)]
+        let right = [CGPoint(x: 54, y: 0), CGPoint(x: 80, y: 0), CGPoint(x: 66, y: 84), CGPoint(x: 40, y: 84)]
+        return [left, right, left]
+    }()
+    private static let keyframes = [f, stub, placed, pause]
+
+    private static let size = NSSize(width: 15, height: 16)
+
+    static func image(phase: CGFloat) -> NSImage {
+        if phase <= 0, let png = AppInfo.symbol?.copy() as? NSImage {
+            png.size = size
+            return png
+        }
+        let img = NSImage(size: size, flipped: true) { rect in
+            let s = min(rect.width / 80, rect.height / 84)
+            let path = NSBezierPath()
+            // The bars shrink, move into place, then stretch upright.
+            let steps = CGFloat(keyframes.count - 1)
+            let k = min(Int(phase * steps), keyframes.count - 2)
+            let t = phase * steps - CGFloat(k)
+            for (a, b) in zip(keyframes[k], keyframes[k + 1]) {
+                for i in 0..<4 {
+                    let p = CGPoint(x: (a[i].x + (b[i].x - a[i].x) * t) * s,
+                                    y: (a[i].y + (b[i].y - a[i].y) * t) * s)
+                    i == 0 ? path.move(to: p) : path.line(to: p)
+                }
+                path.close()
+            }
+            NSColor.black.setFill()
+            path.fill()
+            return true
+        }
+        img.isTemplate = true
+        img.accessibilityDescription = phase >= 1 ? "DeskTime en pausa" : AppInfo.name
+        return img
     }
 }
