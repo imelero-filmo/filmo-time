@@ -219,7 +219,7 @@ let allAchievements: [Achievement] = [
     // Meta
     Achievement(id: "hola", emoji: "👋", title: "Hola, mundo",
                 detail: "Abriste Filmo Time por primera vez. Empieza la caza de logros.") { _ in true },
-    Achievement(id: "miron", emoji: "👀", title: "Mirón compulsivo",
+    Achievement(id: "miron", emoji: "👀", title: "¿Cuánto queda?",
                 detail: "Abriste el resumen 50 veces en un día. El tiempo no pasa más rápido por mirarlo.") {
         $0.popoverOpensToday >= 50
     },
