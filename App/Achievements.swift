@@ -118,6 +118,10 @@ let allAchievements: [Achievement] = [
     },
 
     // Performance
+    Achievement(id: "que-dia-es-hoy", emoji: "📅", title: "¿Qué día es hoy?",
+                detail: "7 horas o más cada día de la semana, de lunes a domingo. Los días ya no tienen nombre.") {
+        $0.week.count == 7 && $0.week.allSatisfy { $0.desktime >= fullDay }
+    },
     Achievement(id: "francotirador", emoji: "🎯", title: "Francotirador",
                 detail: "98 % de productividad en una jornada completa. Ni un disparo fallado.") {
         $0.worked >= fullDay && $0.today.productivity >= 98
